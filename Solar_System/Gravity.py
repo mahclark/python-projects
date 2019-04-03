@@ -452,6 +452,8 @@ while not done:
 
         if keys[pygame.K_r]:
             focus = focus_target
+        else:
+            focus = 0
         
         pygame.draw.line(screen,[15,15,20],(0,ySize/10),(xSize/3 + 5,ySize*3/5 + 7),15)
         pygame.draw.line(screen,[15,15,20],(xSize,ySize/10),(xSize*2/3 - 5,ySize*3/5 + 9),15)
