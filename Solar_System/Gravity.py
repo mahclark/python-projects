@@ -210,21 +210,24 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
-        if keys[pygame.K_0]: focus = 0
-        if keys[pygame.K_1]: focus = 1
-        if keys[pygame.K_2]: focus = 2
-        if keys[pygame.K_3]: focus = 3
-        if keys[pygame.K_4]: focus = 4
-        if keys[pygame.K_5]: focus = 5
-        if keys[pygame.K_6]: focus = 6
-        if keys[pygame.K_7]: focus = 7
-        if keys[pygame.K_8]: focus = 8
-        if keys[pygame.K_9]: focus = 9
-        focus = min(bodies["num"] - 1,focus)
-        
-        if keys[pygame.K_v]:
-            if view_mode == 0: view_mode = 1
-            else: view_mode = 0
+
+    if keys[pygame.K_q]: done = True
+    
+    if keys[pygame.K_0]: focus = 0
+    if keys[pygame.K_1]: focus = 1
+    if keys[pygame.K_2]: focus = 2
+    if keys[pygame.K_3]: focus = 3
+    if keys[pygame.K_4]: focus = 4
+    if keys[pygame.K_5]: focus = 5
+    if keys[pygame.K_6]: focus = 6
+    if keys[pygame.K_7]: focus = 7
+    if keys[pygame.K_8]: focus = 8
+    if keys[pygame.K_9]: focus = 9
+    focus = min(bodies["num"] - 1,focus)
+    
+    if keys[pygame.K_v]:
+        if view_mode == 0: view_mode = 1
+        else: view_mode = 0
 
     if keys[pygame.K_PAGEUP]: zoom_d -= 1
     if keys[pygame.K_PAGEDOWN]: zoom_d += 1
@@ -452,8 +455,6 @@ while not done:
 
         if keys[pygame.K_r]:
             focus = focus_target
-        else:
-            focus = 0
         
         pygame.draw.line(screen,[15,15,20],(0,ySize/10),(xSize/3 + 5,ySize*3/5 + 7),15)
         pygame.draw.line(screen,[15,15,20],(xSize,ySize/10),(xSize*2/3 - 5,ySize*3/5 + 9),15)
@@ -470,6 +471,9 @@ while not done:
         else: label("Relative Velocity: " + str(-int(bodies["rv{0}".format(focus)]*5000)/1000),(10,ySize-50),font1)
         label(str(int(pv*5000)/1000),(xSize - 25 - 8*len(str(int(pv*5000)/1000)),ySize-25),font1)
         label("pps",(xSize - 25,ySize-25),font1)
+
+        if not keys[pygame.K_r]:
+            focus = 0
 
         pdist = dist
         
