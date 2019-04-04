@@ -44,7 +44,7 @@ def get_count(xc, yc, size):
 pygame.init()
 
 #Settings
-size = 20   #controls biome size (increases agianst amplitude)
+size = 40   #controls biome size (increases agianst amplitude)
 pixel = 2   #controls resolution
 k = 1.0     #relative altitude to normal (0.7 < x < 1.5)
 grass = 30  #color level
@@ -112,9 +112,9 @@ pygame.draw.line(screen, [255,0,0], (0, int(hiy+pixel/2)), (xSize, int(hiy+pixel
 pygame.draw.line(screen, [255,0,0], (int(hix+pixel/2), 0), (int(hix+pixel/2), ySize))
 
 #Terrain level
-pygame.draw.line(screen, [0,170,255], (xSize, ySize-ySize*(9.9*3-low)/(high-low)), (2*xSize, ySize-ySize*(9.9*3-low)/(high-low)))
-pygame.draw.line(screen, [91,46,39], (xSize, ySize-ySize*(12.9*3-low)/(high-low)), (2*xSize, ySize-ySize*(12.9*3-low)/(high-low)))
-pygame.draw.line(screen, [255,255,255], (xSize, ySize-ySize*(14.9*3-low)/(high-low)), (2*xSize, ySize-ySize*(14.9*3-low)/(high-low)))
+pygame.draw.line(screen, [0,170,255], (xSize, ySize-ySize*(grass-low)/(high-low)), (2*xSize, ySize-ySize*(grass-low)/(high-low)))
+pygame.draw.line(screen, [91,46,39], (xSize, ySize-ySize*(rock-low)/(high-low)), (2*xSize, ySize-ySize*(rock-low)/(high-low)))
+pygame.draw.line(screen, [255,255,255], (xSize, ySize-ySize*(snow-low)/(high-low)), (2*xSize, ySize-ySize*(snow-low)/(high-low)))
 
 prev = get_count(0, miy, size)
 for x in range(1,int(xSize/pixel)):
