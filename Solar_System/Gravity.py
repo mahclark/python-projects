@@ -92,40 +92,6 @@ def make_planet(ox,oy,r,texture):
                 x1 = r2 - r2*cosine(i*c/(2*n)/r2)
                 pygame.draw.line(screen, texture[ncol][icol], (ox - r2 + x1, y), (ox - r2 + x1 + x, y))
 
-def terminator1(ox, oy, rad, angle, col):
-    if ox + rad > 0 and ox - rad < xSize:
-        if rad < 2:
-            angle = 180 - abs(180 - angle)/1
-            circle(screen,[col[0]*angle/180,col[1]*angle/180,col[2]*angle/180],(ox,oy),rad)
-        else:
-            angle -= int(angle/360)*360
-            for y in range(oy - rad, oy + rad):
-                if angle <= 90:
-                    inter = (rad*rad - (y - oy)*(y - oy))/(tan(radians(angle) + 0.000001) + 1)
-                    x = ox + sqrt(abs(inter))*inter/abs(inter + 0.00001)
-                elif angle >= 270:
-                    inter = (rad*rad - (y - oy)*(y - oy))/(tan(radians(-angle) + 0.000001) + 1)
-                    x = ox - sqrt(abs(inter))*inter/abs(inter + 0.00001)
-                elif angle < 180:
-                    inter = (rad*rad - (y - oy)*(y - oy))/(tan(radians(-angle) + 0.000001) + 1)
-                    x = ox - sqrt(abs(inter))*inter/abs(inter + 0.00001)
-                else:
-                    inter = (rad*rad - (y - oy)*(y - oy))/(tan(radians(angle) + 0.000001) + 1)
-                    x = ox + sqrt(abs(inter))*inter/abs(inter + 0.00001)
-                
-                try:
-                    if angle >= 180:
-                        xs = x
-                        xe = ox + sqrt(rad*rad - pow(y - oy,2)) + 2
-                    else:
-                        xs = ox - sqrt(rad*rad - pow(y - oy,2))
-                        xe = x
-                    
-                    horizontal_line = pygame.Surface((abs(xe - xs), 1), pygame.SRCALPHA)
-                    horizontal_line.fill((0, 0, 0, 249))
-                    screen.blit(horizontal_line, (xs,y))
-                except: pass
-
 def terminator(ox, oy, radius, angle, col):
     alpha = 220
     if ox + radius > 0 and ox - radius < xSize:
