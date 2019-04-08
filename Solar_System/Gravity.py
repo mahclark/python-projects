@@ -2,7 +2,7 @@ import pygame
 import time
 import os
 from random import randint, gauss
-from math import sqrt, atan, atan2, sin as sine, cos as cosine, tan, radians, degrees
+from math import sqrt, atan, atan2, sin as sine, cos as cosine, tan, radians, degrees, pi
 from functions import read
 
 old_method = pygame.draw.circle
@@ -92,7 +92,7 @@ def make_planet(ox,oy,r,texture):
                 x1 = r2 - r2*cosine(i*c/(2*n)/r2)
                 pygame.draw.line(screen, texture[ncol][icol], (ox - r2 + x1, y), (ox - r2 + x1 + x, y))
 
-def terminator(ox, oy, rad, angle, col):
+def terminator1(ox, oy, rad, angle, col):
     if ox + rad > 0 and ox - rad < xSize:
         if rad < 2:
             angle = 180 - abs(180 - angle)/1
@@ -125,6 +125,43 @@ def terminator(ox, oy, rad, angle, col):
                     horizontal_line.fill((0, 0, 0, 249))
                     screen.blit(horizontal_line, (xs,y))
                 except: pass
+
+def terminator(ox, oy, radius, angle, col):
+    alpha = 220
+    if ox + radius > 0 and ox - radius < xSize:
+        if radius < 2:
+            angle = 180 - abs(180 - angle)/1
+            circle(screen,[col[0]*angle/180,col[1]*angle/180,col[2]*angle/180],(ox,oy),radius)
+        else:
+            angle = angle*pi/180
+            angle = 2*pi-angle
+            for y in range(2*int(radius)):
+                rowRadius = sqrt(radius**2 - (radius - y)**2)
+                darkLength = int(rowRadius - rowRadius*sine(angle - pi/2))
+                if angle > pi:
+                    darkStart = ox - rowRadius
+                else:
+                    darkStart = ox + rowRadius - darkLength + 1
+
+                if angle < 0.1 :
+                    darkLength -= 1
+                    f = angle/0.1
+                    bit = pygame.Surface((1, 1), pygame.SRCALPHA)
+                    bit.fill((0, 0, 0, alpha*f))
+                    screen.blit(bit, (ox + rowRadius,oy - radius + y))
+                    
+                if angle > 2*pi - 0.1:
+                    darkLength -= 1
+                    darkStart += 1
+                    
+                    f = (2*pi - angle)/0.1
+                    bit = pygame.Surface((1, 1), pygame.SRCALPHA)
+                    bit.fill((0, 0, 0, alpha*f))
+                    screen.blit(bit, (ox - rowRadius,oy - radius + y))
+                
+                horizontal_line = pygame.Surface((abs(darkLength), 1), pygame.SRCALPHA)
+                horizontal_line.fill((0, 0, 0, alpha))
+                screen.blit(horizontal_line, (darkStart,oy - radius + y))
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 

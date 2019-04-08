@@ -44,7 +44,7 @@ def get_count(xc, yc, size):
 pygame.init()
 
 #Settings
-size = 40   #controls biome size (increases agianst amplitude)
+size = 60   #controls biome size (increases agianst amplitude)
 pixel = 2   #controls resolution
 k = 1.0     #relative altitude to normal (0.7 < x < 1.5)
 grass = 30  #color level
