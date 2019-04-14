@@ -39,8 +39,8 @@ def add_body(name,col1,col2,path,mass,pos,hv,vv):
         for i in range(len(text)):
             bodies["text{0}".format(bodies["num"])][i] = []
             for j in text[i]:
-                if j == "q": bodies["text{0}".format(bodies["num"])][i].append(col2)
-                elif j == "w": bodies["text{0}".format(bodies["num"])][i].append(col1)
+                if j == "#": bodies["text{0}".format(bodies["num"])][i].append(col2)
+                elif j == "'": bodies["text{0}".format(bodies["num"])][i].append(col1)
     
     bodies["num"] += 1
 
@@ -237,7 +237,7 @@ while not done:
     zoom_d = max(zoom_d,1)
     zoom = xSize/(zoom_d*zoom_d)
         
-    screen.fill([0,0,0])
+    screen.fill([10,10,10])
 
     if frameCount % 50 == 0:
         for i in range(len(bodies["text2"])):
@@ -390,7 +390,11 @@ while not done:
                 #print(angle, rad*fov/xSize, arg, odist, dist, origx, origy, star[0], star[1])
                 
             for n in range(-1,2):
+                screen.set_at((int(xSize/2 + (star[0] + offset + 360*n)/fov*xSize), int(star[1] + ySize/2) + 1), col)
+                screen.set_at((int(xSize/2 + (star[0] + offset + 360*n)/fov*xSize), int(star[1] + ySize/2) - 1), col)
                 screen.set_at((int(xSize/2 + (star[0] + offset + 360*n)/fov*xSize), int(star[1] + ySize/2)), col)
+                screen.set_at((int(xSize/2 + (star[0] + offset + 360*n)/fov*xSize + 1), int(star[1] + ySize/2)), col)
+                screen.set_at((int(xSize/2 + (star[0] + offset + 360*n)/fov*xSize - 1), int(star[1] + ySize/2)), col)
             star[0] = origx
             star[1] = origy
         
