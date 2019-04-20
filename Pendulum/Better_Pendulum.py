@@ -82,8 +82,9 @@ p3 = DynamicPoint(250, 300, [0,255,0])
 p4 = DynamicPoint(245, 250, [0,255,0])
 link3 = Link(center, p3)
 link4 = Link(p3, p4)
+Link(p4,p1)
 
-center = FixedPoint(100, 100)
+center = DynamicPoint(100, 100)
 p1 = DynamicPoint(50, 50)
 p2 = DynamicPoint(150, 0)
 p1.mass = 100
