@@ -24,14 +24,16 @@ def makeNoise(cellSize):
         ]
     vectors = []
 
-    for yCorner in range(int(ySize/cellSize) + 1):
+    for yCorner in range(int(ySize/cellSize)):
         vectors.append([])
-        for xCorner in range(int(xSize/cellSize) + 1):
+        for xCorner in range(int(xSize/cellSize)):
             randX = random.random()
             randY = random.random()
             mod = sqrt(randX**2 + randY**2)
             vectors[yCorner].append(vectorChoice[randint(0, len(vectorChoice) - 1)])
                                     #(randX/mod, randY/mod))
+        vectors[yCorner].append(vectors[yCorner][0])
+    vectors.append(vectors[0])
 
     values = []
     for y in range(ySize): values.append([])
