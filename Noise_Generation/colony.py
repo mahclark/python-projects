@@ -12,9 +12,11 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 xSize, ySize = 1200, 800
 
-redersShadows = True #High render times!
+rendersShadows = False #High render times!
 
-# pygame.display.flip()
+pygame.init()
+screen = pygame.display.set_mode((xSize, ySize))
+pygame.display.set_caption("Colony")
 
 class Bridge():
     def __init__(self, origin, aim):
@@ -25,6 +27,32 @@ class Bridge():
         self.direction = (self.direction[0]/sqrt(self.direction[0]**2 + self.direction[1]**2), self.direction[1]/(sqrt(self.direction[0]**2 + self.direction[1]**2)))
         self.current = (origin[0] + self.direction[0], origin[1] + self.direction[1])
     complete = False
+
+class Airplane():
+	landed = True
+
+	def __init__(self, position):
+		self.position = position
+		self.pixel = position
+		self.hidden_color1 = screen.get_at(position)
+		self.hidden_color2 = screen.get_at(position)
+		self.tail = position
+		self.height = 0
+
+	def takeoff(self, destination):
+		self.landed = False
+		self.destination = destination
+		self.curveSide = 2*randint(0,1) - 1
+		self.adjust()
+
+	def adjust(self):
+		self.direction = (self.destination[0] - self.position[0], self.destination[1] - self.position[1])
+		self.dist = sqrt(self.direction[0]**2 + self.direction[1]**2)
+		if self.dist > 2: self.direction = (self.direction[0] + self.curveSide*self.direction[1]/1.5, self.direction[1] - self.curveSide*self.direction[0]/1.5)
+		self.direction = (self.direction[0]/self.dist, self.direction[1]/self.dist)
+
+airplane = Airplane((1,2))
+airplane.takeoff((5,20))
 
 def multiplyVec(vector, x):
     newVector = []
@@ -72,6 +100,11 @@ def makePath(pos, destination=None):
         bridge = Bridge(bridgePos, destination)
         bridges.append(bridge)
 
+def offScreen(pos):
+	if pos[0] < 0 or pos[0] >= xSize or pos[1] < 0 or pos[1] >= ySize:
+		return True
+	return False
+
 (v0, n0) = perlin_noise.makeNoise((200,200), (xSize, ySize))
 (v1, n1) = perlin_noise.makeNoise((50,50), (xSize, ySize))
 (v2, n2) = perlin_noise.makeNoise((25,25), (xSize, ySize))
@@ -86,7 +119,7 @@ levelWeights = (1, 0.3, 0.2, 0.1)
 
 waterLevel = 0.5
 grassLevel = 0.65
-rockLevel = 1.0
+rockLevel = 20.0
 
 potentialHubs = []
 heights = {}
@@ -105,10 +138,6 @@ for y in range(ySize):
 
         heights[(x,y)] = value
         if value > maxHeight: maxHeight = value
-
-pygame.init()
-screen = pygame.display.set_mode((xSize, ySize))
-pygame.display.set_caption("Colony")
         
 for y in range(ySize):
     for x in range(xSize):
@@ -144,10 +173,9 @@ for y in range(ySize):
             meshColor = (235,235,235)#[255*(value), 255*(value), 255*(value)]
 
         shaded = False
-        if redersShadows:
-            casted = False
+        if rendersShadows:
             currentPos = (x,y,max(value, waterLevel))
-            shadowInaccuracy = 5
+            shadowInaccuracy = 3
             while True:
                 currentPos = (currentPos[0] + shadowInaccuracy*L[0], currentPos[1] + shadowInaccuracy*L[1], currentPos[2] + shadowInaccuracy*L[2]/4)
                 if round(currentPos[0]) < 0 or round(currentPos[1]) < 0 or round(currentPos[0]) >= xSize or round(currentPos[1]) >=ySize or currentPos[2] > maxHeight:
@@ -162,18 +190,21 @@ for y in range(ySize):
         
         screen.set_at((x, y), color)
     if 100*y/ySize % 10 == 0:
-        print(str(int(100*y/ySize)) + "%") 
+        print(str(int(100*y/ySize)) + "%")
 
 cityNumber = 1
 cities = []
 hubs = []
 bridges = [] #[(origin, current build pos, destination hub)]
+airports = []
+airplanes = []
 for cityNum in range(cityNumber):
     city = []
     hub = potentialHubs[randint(0,len(potentialHubs) - 1)]
     hubs.append(hub)
     city.append(hub)
     cities.append(city)
+    airports.append(hub)
 
 path = []
 pathRemaining = []
@@ -201,10 +232,15 @@ while not done:
         if event.type == pygame.MOUSEBUTTONUP:
             mouseHold = False
 
-            makePath((mx,my))
+            if heights[(mx,my)] >= waterLevel and heights[(mx,my)] < grassLevel:
+	            makePath((mx,my))
 
-            cities.append([(mx,my)])
-            hubs.append((mx,my))
+	            cities.append([(mx,my)])
+	            hubs.append((mx,my))
+	            airports.append((mx,my))
+
+	            airplane = Airplane((mx,my))
+	            airplanes.append(airplane)
 
     for city in cities:
         cityPoint = city[randint(0, len(city) - 1)]
@@ -221,7 +257,7 @@ while not done:
                     ]
                     screen.set_at(expansionPoint, shader(cityPalette[randint(0, len(cityPalette) - 1)], normals[expansionPoint], shadow[expansionPoint]))
 
-    if pathRemaining != [] and frameCount%3 == 0 and sum([len(city) for city in cities]) > 2:#00:
+    if pathRemaining != [] and frameCount%3 == 0 and sum([len(city) for city in cities]) > 200:
         screen.set_at(pathRemaining[0], shader([80,80,80], normals[pathRemaining[0]], shadow[pathRemaining[0]]))
         if len(pathRemaining) > 1: screen.set_at(pathRemaining[-1], shader([80,80,80], normals[pathRemaining[-1]], shadow[pathRemaining[-1]]))
         del pathRemaining[0]
@@ -229,51 +265,86 @@ while not done:
 
     for (n, bridge) in enumerate(bridges):
         if not bridge.complete and pathRemaining == []:
-            # distX = bridge.aim[0] - bridge.current[0]
-            # distY = bridge.aim[1] - bridge.current[1]
-
-            # if abs(distX) + abs(distY) == 1:
-            #     newPos = (bridge.current[0] + distX, bridge.current[1] + distY)
-            # elif randint(1, abs(distX) + abs(distY)) <= abs(distX):
-            #     newPos = (bridge.current[0] + int(distX/abs(distX)), bridge.current[1])
-            # else:
-            #     newPos = (bridge.current[0], bridge.current[1] + int(distY/abs(distY)))
             newPos = (bridge.current[0] + bridge.direction[0], bridge.current[1] + bridge.direction[1])
             newPixel = (round(newPos[0]), round(newPos[1]))
 
-            sides = [
-                (newPixel[0] - 1, newPixel[1] - 1),
-                (newPixel[0]    , newPixel[1] - 1),
-                (newPixel[0] + 1, newPixel[1] - 1),
-                (newPixel[0] - 1, newPixel[1]    ),
-                (newPixel[0] + 1, newPixel[1]    ),
-                (newPixel[0] - 1, newPixel[1] + 1),
-                (newPixel[0]    , newPixel[1] + 1),
-                (newPixel[0] + 1, newPixel[1] + 1),
-                ]
+            # sides = [
+            #     (newPixel[0] - 1, newPixel[1] - 1),
+            #     (newPixel[0]    , newPixel[1] - 1),
+            #     (newPixel[0] + 1, newPixel[1] - 1),
+            #     (newPixel[0] - 1, newPixel[1]    ),
+            #     (newPixel[0] + 1, newPixel[1]    ),
+            #     (newPixel[0] - 1, newPixel[1] + 1),
+            #     (newPixel[0]    , newPixel[1] + 1),
+            #     (newPixel[0] + 1, newPixel[1] + 1),
+            #     ]
 
-            screen.set_at(newPixel, shader([100,100,100], (0,0,1), shadow[newPixel]))
+            screen.set_at(newPixel, shader([150,150,150], (0,0,1), shadow[newPixel]))
 
-            for side in sides:
-                if side not in bridge.points:
-                    screen.set_at(side, shader([150,150,150], (0,0,1), shadow[side]))
+            # for side in sides:
+            #     if side not in bridge.points and not offScreen(side):
+            #         screen.set_at(side, shader([150,150,150], (0,0,1), shadow[side]))
 
             bridge.current = newPos
             bridge.points.append(newPixel)
 
             if heights[newPixel] >= waterLevel:
-                # pygame.draw.line(screen, [100,100,100], bridge.origin, bridge.current, 3)
-                # pygame.draw.line(screen, [50,50,50], bridge.origin, bridge.current)
-
                 bridge.complete = True
                 print("aim path from " + str(newPixel) + " to " + str(bridge.aim))
                 makePath(newPixel, bridge.aim)
+
+    if randint(1,60) == 1 and airplanes != []:
+    	plane = airplanes[randint(0, len(airplanes) - 1)]
+    	if plane.landed:
+    		destination = plane.position
+    		while destination == plane.position:
+    			destination = hubs[randint(0, len(hubs) - 1)]
+
+    		plane.takeoff(destination)
     
+    for plane in airplanes:
+    	if not plane.landed and sum([len(city) for city in cities]) > 400:
+    		plane.adjust()
+
+    		newPos = (plane.position[0] + plane.direction[0], plane.position[1] + plane.direction[1])
+    		newPixel = (round(newPos[0]), round(newPos[1]))
+
+    		pixelNoMove = False
+    		if plane.pixel == newPixel: pixelNoMove = True
+
+    		if not offScreen(plane.tail) and not pixelNoMove:
+    			screen.set_at(plane.tail, plane.hidden_color2)
+
+    		plane.position = newPos
+
+    		if not pixelNoMove:
+    			plane.tail = plane.pixel
+    			plane.pixel = newPixel
+
+    		if not offScreen(plane.pixel) and not pixelNoMove:
+    			plane.hidden_color2 = plane.hidden_color1
+    			plane.hidden_color1 = screen.get_at(plane.pixel)
+    			screen.set_at(plane.pixel, shader([255,255,255], (0,0,1), False))
+
+    		# currentPos = (plane.pixel[0], plane.pixel[1], plane.height)
+    		# shadowInaccuracy = 3
+    		# while True:
+    		# 	currentPos = (currentPos[0] - shadowInaccuracy*L[0], currentPos[1] - shadowInaccuracy*L[1], currentPos[2] - shadowInaccuracy*L[2]/4)
+    		# 	if round(currentPos[0]) < 0 or round(currentPos[1]) < 0 or round(currentPos[0]) >= xSize or round(currentPos[1]) >=ySize or currentPos[2] > maxHeight:
+    		# 		break
+    		# 	if heights[(round(currentPos[0]), round(currentPos[1]))] > currentPos[2]:
+    		# 		shadow[(round(currentPos[0]), round(currentPos[1]))] = True
+    		# 		break
+
+    		if plane.pixel == plane.destination:
+    			plane.landed = True
+    			if not offScreen(plane.pixel): screen.set_at(plane.pixel, plane.hidden_color1)
+    			if not offScreen(plane.tail): screen.set_at(plane.tail, plane.hidden_color2)
+
 
     pygame.display.flip()
 
     clock.tick(60)
     currentFps = clock.get_fps()
-    # if frameCount % 360 == 0: print(int(clock.get_fps()))
 
 pygame.quit()
