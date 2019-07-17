@@ -106,42 +106,42 @@ pygame.draw.rect(screen, [255,0,0], (hix,hiy,pixel,pixel))
 pygame.draw.rect(screen, [0,0,255], (mix,miy,pixel,pixel))
 
 #Max / Min
-pygame.draw.line(screen, [0,0,255], (0, int(miy+pixel/2)), (xSize, int(miy+pixel/2)))
-pygame.draw.line(screen, [0,0,255], (int(mix+pixel/2), 0), (int(mix+pixel/2), ySize))
-pygame.draw.line(screen, [255,0,0], (0, int(hiy+pixel/2)), (xSize, int(hiy+pixel/2)))
-pygame.draw.line(screen, [255,0,0], (int(hix+pixel/2), 0), (int(hix+pixel/2), ySize))
-
-#Terrain level
-pygame.draw.line(screen, [0,170,255], (xSize, ySize-ySize*(grass-low)/(high-low)), (2*xSize, ySize-ySize*(grass-low)/(high-low)))
-pygame.draw.line(screen, [91,46,39], (xSize, ySize-ySize*(rock-low)/(high-low)), (2*xSize, ySize-ySize*(rock-low)/(high-low)))
-pygame.draw.line(screen, [255,255,255], (xSize, ySize-ySize*(snow-low)/(high-low)), (2*xSize, ySize-ySize*(snow-low)/(high-low)))
-
-prev = get_count(0, miy, size)
-for x in range(1,int(xSize/pixel)):
-    x *= pixel
-    count = get_count(x, miy, size)
-    pygame.draw.line(screen, [0,0,0], (x-pixel+xSize,ySize-ySize*(prev-low)/(high-low)), (x+xSize,ySize-ySize*(count-low)/(high-low)))
-    prev = count
-    pygame.display.flip()
-
-prev = get_count(0, hiy, size)
-for x in range(1,int(xSize/pixel)):
-    x *= pixel
-    count = get_count(x, hiy, size)
-    pygame.draw.line(screen, [255,255,255], (x-pixel+xSize,ySize-ySize*(prev-low)/(high-low)), (x+xSize,ySize-ySize*(count-low)/(high-low)))
-    prev = count
-    pygame.display.flip()
-
-##for x in range(int(xSize/pixel)):
+##pygame.draw.line(screen, [0,0,255], (0, int(miy+pixel/2)), (xSize, int(miy+pixel/2)))
+##pygame.draw.line(screen, [0,0,255], (int(mix+pixel/2), 0), (int(mix+pixel/2), ySize))
+##pygame.draw.line(screen, [255,0,0], (0, int(hiy+pixel/2)), (xSize, int(hiy+pixel/2)))
+##pygame.draw.line(screen, [255,0,0], (int(hix+pixel/2), 0), (int(hix+pixel/2), ySize))
+##
+###Terrain level
+##pygame.draw.line(screen, [0,170,255], (xSize, ySize-ySize*(grass-low)/(high-low)), (2*xSize, ySize-ySize*(grass-low)/(high-low)))
+##pygame.draw.line(screen, [91,46,39], (xSize, ySize-ySize*(rock-low)/(high-low)), (2*xSize, ySize-ySize*(rock-low)/(high-low)))
+##pygame.draw.line(screen, [255,255,255], (xSize, ySize-ySize*(snow-low)/(high-low)), (2*xSize, ySize-ySize*(snow-low)/(high-low)))
+##
+##prev = get_count(0, miy, size)
+##for x in range(1,int(xSize/pixel)):
 ##    x *= pixel
-##    for y in range(int(ySize/pixel)):
-##        y *= pixel
-##        count = get_count(x, y, size)
-##        total += count 
-##            
-##        pygame.draw.rect(screen, [255*(count-low)/(high-low),255*(count-low)/(high-low),255*(count-low)/(high-low)], (x+xSize,y,pixel,pixel))
-##            
-##        pygame.display.flip()
+##    count = get_count(x, miy, size)
+##    pygame.draw.line(screen, [0,0,0], (x-pixel+xSize,ySize-ySize*(prev-low)/(high-low)), (x+xSize,ySize-ySize*(count-low)/(high-low)))
+##    prev = count
+##    pygame.display.flip()
+##
+##prev = get_count(0, hiy, size)
+##for x in range(1,int(xSize/pixel)):
+##    x *= pixel
+##    count = get_count(x, hiy, size)
+##    pygame.draw.line(screen, [255,255,255], (x-pixel+xSize,ySize-ySize*(prev-low)/(high-low)), (x+xSize,ySize-ySize*(count-low)/(high-low)))
+##    prev = count
+##    pygame.display.flip()
+
+for x in range(int(xSize/pixel)):
+    x *= pixel
+    for y in range(int(ySize/pixel)):
+        y *= pixel
+        count = get_count(x, y, size)
+        total += count 
+            
+        pygame.draw.rect(screen, [255*(count-low)/(high-low),255*(count-low)/(high-low),255*(count-low)/(high-low)], (x+xSize,y,pixel,pixel))
+            
+        pygame.display.flip()
         
 for i in range(len(dotsx)):
     pygame.draw.circle(screen, [255,0,0], (dotsx[i]+xSize, dotsy[i][0]), 2)

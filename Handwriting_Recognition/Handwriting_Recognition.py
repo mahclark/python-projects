@@ -13,7 +13,7 @@ pygame.display.set_caption("Pygame Template")
 #Variables
 box = 100
 learnt = ["1","2","3","h","e","l","o","あ","い","う","え","お","食","意"]
-w_char = "2"
+w_char = "食"
 bit = {}
 num = {}
 trySum = {}

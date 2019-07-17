@@ -67,30 +67,30 @@ class Link:
 
 center = FixedPoint(300, 300)
 
-##for i in range(10):
-##    p1 = DynamicPoint(250, 300, [0, i*25, 255 - i*25])
-##    p2 = DynamicPoint(245 + i, 250, [0, i*25, 255 - i*25])
-##    link1 = Link(center, p1)
-##    lin2 = Link(p1, p2)
+for i in range(0,5,4):
+    p1 = DynamicPoint(250, 300, [0, i*25, 255 - i*25])
+    p2 = DynamicPoint(245 + i, 250, [0, i*25, 255 - i*25])
+    link1 = Link(center, p1)
+    lin2 = Link(p1, p2)
 
-p1 = DynamicPoint(250, 300)
-p2 = DynamicPoint(255, 250)
-link1 = Link(center, p1)
-link2 = Link(p1, p2)
-
-p3 = DynamicPoint(250, 300, [0,255,0])
-p4 = DynamicPoint(245, 250, [0,255,0])
-link3 = Link(center, p3)
-link4 = Link(p3, p4)
-Link(p4,p1)
-
-center = DynamicPoint(100, 100)
-p1 = DynamicPoint(50, 50)
-p2 = DynamicPoint(150, 0)
-p1.mass = 100
-link1 = Link(center, p1, True)
-link2 = Link(p1, p2)
-link3 = Link(center, p2, True)
+##p1 = DynamicPoint(250, 300)
+##p2 = DynamicPoint(255, 250)
+##link1 = Link(center, p1)
+##link2 = Link(p1, p2)
+##
+##p3 = DynamicPoint(250, 300, [0,255,0])
+##p4 = DynamicPoint(245, 250, [0,255,0])
+##link3 = Link(center, p3)
+##link4 = Link(p3, p4)
+##Link(p4,p1)
+##
+##center = DynamicPoint(100, 100)
+##p1 = DynamicPoint(50, 50)
+##p2 = DynamicPoint(150, 0)
+##p1.mass = 100
+##link1 = Link(center, p1, True)
+##link2 = Link(p1, p2)
+##link3 = Link(center, p2, True)
 
 
 mouseHold = False
