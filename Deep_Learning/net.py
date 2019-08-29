@@ -1,3 +1,5 @@
+#credit to https://github.com/mukul-rathi/workshop-deep-learning for teaching me neural networks in python
+
 import numpy as np
 
 def initialise_parameters(layers, randomWeight):
