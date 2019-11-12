@@ -12,7 +12,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 xSize, ySize = 1200, 800
 
-rendersShadows = True #High render times!
+rendersShadows = False #High render times!
 
 pygame.init()
 screen = pygame.display.set_mode((xSize, ySize))
