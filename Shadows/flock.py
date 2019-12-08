@@ -4,7 +4,7 @@ from random import randint, random
 import operator
 from math import sin, cos, pi, sqrt, atan2
 
-xSize, ySize = 1200, 800
+xSize, ySize = 1200, 600
 screen = pygame.display.set_mode((xSize, ySize))
 pygame.display.set_caption("flock")
 
@@ -12,7 +12,7 @@ adultAge = 700
 margin = 20
 
 followTheLeader = False
-grandmasFootsteps = True
+grandmasFootsteps = False
 ringOfFire = False
 
 def toVec(angle):
@@ -40,6 +40,33 @@ class Vec2():
 
 	def toAngle(self):
 		return (atan2(self.y, -self.x) - pi/2)%(2*pi)
+
+	def abs(self):
+		return sqrt(self.x**2 + self.y**2)
+
+	def mult(self, n):
+		return Vec2(self.x*n, self.y*n)
+
+	def addVec(self, vec):
+		return Vec2(self.x + vec.x, self.y + vec.y)
+
+	def sendOffScreen(self):
+		return self.mult(Vec2(xSize,ySize).abs()/self.abs())
+
+	def avg(self, vec):
+		return self.addVec(vec).mult(0.5)
+
+	def toPair(self):
+		return (self.x, self.y)
+
+	def toIntPair(self):
+		return (int(self.x), int(self.y))
+
+	def toAngle(self):
+		return (atan2(self.y, -self.x) - pi/2)%(2*pi)
+
+	def average(vecs):
+		return Vec2(sum([vec.x for vec in vecs])/len(vecs), sum([vec.y for vec in vecs])/len(vecs))
 
 class Bish():
 
@@ -84,7 +111,7 @@ class Bish():
 
 		self._rotBy(diff/factor)
 
-	def rotate(self, mousePos, mouseHold, leader):
+	def rotate(self, mousePos, mouseHold, leader, obstacles):
 
 		#Deisre to isolate
 		angle1 = self.dirc
@@ -206,17 +233,19 @@ class Flock():
 
 		self.bishes.append(bish)
 
-	def move(self, shouldSeek, mousePos, mouseHold):
+	def move(self, shouldSeek, mousePos, mouseHold, obstacles):
 		for bish in self.bishes:
 			bish.move()
 			if shouldSeek: bish.seek(self.bishes)
-			bish.rotate(mousePos, mouseHold, self.bishes[-1])
+			bish.rotate(mousePos, mouseHold, self.bishes[-1], obstacles)
+
+		return self.bishes[-1].pos
 
 	def draw(self):
 		scene = pygame.Surface((xSize, ySize), pygame.SRCALPHA, 32)
 
 		for bish in self.bishes:
-			col = [200,240,240] if bish != self.bishes[-1] or not followTheLeader else [240, 120, 80]
+			col = [20,200,90] if bish != self.bishes[-1] else [240, 200, 10]
 			pygame.draw.polygon(scene, col, (
 				(bish.pos.x + 16*sin(bish.dirc)*(bish.age + 200)/adultAge,			bish.pos.y + 16*cos(bish.dirc)*(bish.age + 200)/adultAge),
 				(bish.pos.x + 5*sin(bish.dirc - pi/2)*(bish.age + 200)/adultAge,	bish.pos.y + 5*cos(bish.dirc - pi/2)*(bish.age + 200)/adultAge),
@@ -225,9 +254,10 @@ class Flock():
 
 			#pygame.draw.line(scene, [255,0,0], bish.pos.ints(), Vec2(bish.pos.x + bish.sightRad*toVec(bish.desi).x, bish.pos.y + bish.sightRad*toVec(bish.desi).y).ints())
 
-		obstacles.draw(scene)
+		#obstacles.draw(scene)
 
-		screen.blit(scene, (0,0))
+		return scene
+		#screen.blit(scene, (0,0))
 
 class Obstacles():
 
@@ -250,41 +280,42 @@ class Obstacles():
 		return False
 
 
+if __name__ == "__main__":
 
-obstacles = Obstacles();
-flock = Flock(200)
+	obstacles = Obstacles();
+	flock = Flock(200)
 
-#obstacles.add(400,300,100,300)
+	#obstacles.add(400,300,100,300)
 
-#----------------------Main Loop----------------------
-mouseHold = False
-clock = pygame.time.Clock()
-frameCount = 0
-done = False
-while not done:
-	mx, my = pygame.mouse.get_pos()
-	keys = pygame.key.get_pressed()
-	frameCount += 1
-	for event in pygame.event.get():
-		if event.type == pygame.QUIT:
+	#----------------------Main Loop----------------------
+	mouseHold = False
+	clock = pygame.time.Clock()
+	frameCount = 0
+	done = False
+	while not done:
+		mx, my = pygame.mouse.get_pos()
+		keys = pygame.key.get_pressed()
+		frameCount += 1
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				done = True
+			if event.type == pygame.MOUSEBUTTONDOWN:
+				mouseHold = True
+
+			if event.type == pygame.MOUSEBUTTONUP:
+				mouseHold = False
+				
+		#if frameCount%120 == 0:
+		screen.fill([20,20,20])
+
+		flock.move(True, Vec2(mx, my), mouseHold)
+		flock.draw()
+
+		if frameCount > 5000:
+			print("TIMEOUT")
 			done = True
-		if event.type == pygame.MOUSEBUTTONDOWN:
-			mouseHold = True
 
-		if event.type == pygame.MOUSEBUTTONUP:
-			mouseHold = False
-			
-	#if frameCount%120 == 0:
-	screen.fill([20,20,20])
+		pygame.display.flip()
+		clock.tick(60)
 
-	flock.move(True, Vec2(mx, my), mouseHold)
-	flock.draw()
-
-	if frameCount > 5000:
-		print("TIMEOUT")
-		done = True
-
-	pygame.display.flip()
-	clock.tick(60)
-
-pygame.quit()
+	pygame.quit()
