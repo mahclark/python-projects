@@ -1,6 +1,7 @@
 import pygame
 import time
 import os
+import rocket
 from random import randint, gauss
 from math import sqrt, atan, atan2, sin as sine, cos as cosine, tan, radians, degrees, pi
 from functions import read
@@ -172,8 +173,8 @@ add_body("Planet X",[100,65,204],[20,20,20],"\Text_Planet_X.txt",pow(10,22),[0,-
 add_body("Alpha Centauri A",[254,159,67],[170,158,90],"",pow(10,25),[100000,20000],-sqrt(G*2*pow(10,25)/400),0)
 add_body("Alpha Centauri B",[94,109,247],[170,158,90],"",2*pow(10,25),[100000,20200],sqrt(G*pow(10,25)/400),0)
 add_body("Proxima Centauri",[255,59,37],[170,158,90],"",pow(10,23),[100000,22000],sqrt(G*3*pow(10,25)/2000),0)
-add_body("Black Hole",[0,0,0],[0,0,0],"",pow(10,24),[500,600],0,0)
-add_body("Ok",[255,255,255],[255,0,0],"\Text_Ok.txt",pow(10,25),[500,0],0,0)
+add_body("Black Hole",[0,0,0],[0,0,0],"",pow(10,24),[500,600],0,sqrt(G*3*pow(10,25)/1000))
+#add_body("Ok",[255,255,255],[255,0,0],"\Text_Ok.txt",pow(10,25),[500,0],0,0)
     
 
 bodies["rv0"] = 0.0
@@ -463,10 +464,15 @@ while not done:
         if keys[pygame.K_r]:
             focus = focus_target
         
-        pygame.draw.line(screen,[15,15,20],(0,ySize/10),(xSize/3 + 5,ySize*3/5 + 7),15)
-        pygame.draw.line(screen,[15,15,20],(xSize,ySize/10),(xSize*2/3 - 5,ySize*3/5 + 9),15)
-        pygame.draw.line(screen,[15,15,20],(xSize*9/24,ySize),(xSize/3,ySize*3/5),10)
-        pygame.draw.line(screen,[15,15,20],(xSize*15/24,ySize),(xSize*2/3,ySize*3/5),10)
+        # pygame.draw.line(screen,[15,15,20],(0,ySize/10),(xSize/3 + 5,ySize*3/5 + 7),15)
+        # pygame.draw.line(screen,[15,15,20],(xSize,ySize/10),(xSize*2/3 - 5,ySize*3/5 + 9),15)
+        # pygame.draw.line(screen,[15,15,20],(xSize*9/24,ySize),(xSize/3,ySize*3/5),10)
+        # pygame.draw.line(screen,[15,15,20],(xSize*15/24,ySize),(xSize*2/3,ySize*3/5),10)
+        
+        
+        l_direction = (atan2(bodies["pos1"][0] - bodies["pos0"][0], bodies["pos1"][1] - bodies["pos0"][1]) - pi/2)%(2*pi)
+        v_direction = (atan2(bodies["hv0"], bodies["vv0"]) - pi/2)%(2*pi)
+        rocket.draw(v_direction - offset*pi/180, screen, l_direction)
             
         font1 = pygame.font.SysFont("agency fb", 20)
 
