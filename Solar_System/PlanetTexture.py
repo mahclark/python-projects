@@ -81,8 +81,8 @@ texture = {}
 for i in range(len(text)):
     texture[i] = []
     for j in text[i]:
-        if j == "q": texture[i].append(q)
-        elif j == "w": texture[i].append(w)
+        if j == "#": texture[i].append(q)
+        elif j == "'": texture[i].append(w)
 
 r = 50
 ox, oy = 300, 300

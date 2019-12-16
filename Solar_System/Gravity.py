@@ -472,7 +472,7 @@ while not done:
         
         l_direction = (atan2(bodies["pos1"][0] - bodies["pos0"][0], bodies["pos1"][1] - bodies["pos0"][1]) - pi/2)%(2*pi)
         v_direction = (atan2(bodies["hv0"], bodies["vv0"]) - pi/2)%(2*pi)
-        rocket.draw(v_direction - offset*pi/180, screen, l_direction)
+        rocket.draw(v_direction - offset*pi/180, screen, l_direction, keys[pygame.K_w] or keys[pygame.K_a] or keys[pygame.K_s] or keys[pygame.K_d])
             
         font1 = pygame.font.SysFont("agency fb", 20)
 
