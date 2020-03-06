@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
 	pygame.init()
 
-	xSize, ySize = 2000, 1500
+	xSize, ySize = 1000, 750
 	screen = pygame.display.set_mode((xSize, ySize))
 	pygame.display.set_caption("Pygame Template")
 

@@ -44,8 +44,6 @@ class Vec2():
 
 	def average(vecs):
 		return Vec2(sum([vec.x for vec in vecs])/len(vecs), sum([vec.y for vec in vecs])/len(vecs))
-		
-
 
 class Block():
 
@@ -90,11 +88,6 @@ class Block():
 						break
 					shadowPoints.append(corners[adj_corners.index(s_corners[index])].toPair())
 
-				# for corner in [Vec2(0,0), Vec2(xSize,0), Vec2(xSize,ySize), Vec2(0,ySize)]:
-				# 	trio = [(a.addVec(light.mult(-1)).toAngle() - self.center.addVec(light.mult(-1)).toAngle() + pi)%(2*pi) for a in [corner, self.points[high], self.points[low]]]
-				# 	if trio.index(max(trio)) and trio.index(min(trio)):
-				# 		shadowPoints.append(corner.toPair())
-
 				shadowPoints.append(light.addVec(self.points[n].addVec(light.mult(-1)).sendOffScreen()).toPair())
 				shadowPoints.append(point.toPair())
 
@@ -111,7 +104,7 @@ class Scene():
 	def add(self, block):
 		self.blocks.append(block)
 
-	def draw(self, surf):		
+	def draw(self, surf):
 		for block in self.blocks:
 			block.draw(surf)
 
@@ -139,7 +132,7 @@ scene.add(Block([(620,460),(590,390),(730,391),(720,500)]))
 
 light = Vec2(400,200)
 
-birds = flock.Flock(100)
+birds = flock.Flock(100, scene)
 
 #----------------------Main Loop----------------------#
 
@@ -171,7 +164,7 @@ while not done:
 	scene.shade(screen, light)
 	scene.draw(screen)
 
-	if (frameCount > 60*60*3):
+	if (frameCount > 60*60*5):
 		print("TIMEOUT")
 		done = True
 

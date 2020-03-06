@@ -12,7 +12,7 @@ adultAge = 700
 margin = 20
 
 followTheLeader = False
-grandmasFootsteps = True
+grandmasFootsteps = False
 ringOfFire = False
 
 def toVec(angle):

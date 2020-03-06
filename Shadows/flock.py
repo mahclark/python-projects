@@ -10,6 +10,7 @@ pygame.display.set_caption("flock")
 
 adultAge = 700
 margin = 20
+bish_col = [20,200,90]
 
 followTheLeader = False
 grandmasFootsteps = False
@@ -68,6 +69,8 @@ class Vec2():
 	def average(vecs):
 		return Vec2(sum([vec.x for vec in vecs])/len(vecs), sum([vec.y for vec in vecs])/len(vecs))
 
+predatorDists = []
+
 class Bish():
 
 	sightRad = 50
@@ -76,16 +79,19 @@ class Bish():
 	desi = 0
 	nearby = []
 	age = adultAge - 200
+	predator = False
+	vel = Vec2(0,0)
 
 	def __init__(self, pos=Vec2(xSize/2,ySize/2)):
 		self.pos = pos
 
-	def move(self):
-		xVel = self.speed*sin(self.dirc)
-		yVel = self.speed*cos(self.dirc)
+	def move(self, obstacles):
+		self.vel.x = self.speed*sin(self.dirc)
+		self.vel.y = self.speed*cos(self.dirc)
 
-		self.pos.x += xVel
-		self.pos.y += yVel
+		if self.predator or not obstacles.collides(self.pos.addVec(self.vel)):
+			self.pos.x += self.vel.x
+			self.pos.y += self.vel.y
 
 	def _rotBy(self, dt):
 		self.dirc += dt
@@ -111,7 +117,7 @@ class Bish():
 
 		self._rotBy(diff/factor)
 
-	def rotate(self, mousePos, mouseHold, leader, obstacles):
+	def rotate(self, mousePos, mouseHold, predator, obstacles, flock):
 
 		#Deisre to isolate
 		angle1 = self.dirc
@@ -165,11 +171,28 @@ class Bish():
 		else:
 			self.speed = 0 if grandmasFootsteps else 3
 
+		if self.predator: self.speed = len(flock.bishes)/25
+
 		#Follow the leader
 		angle5 = self.dirc
-		weight5 = 3 if followTheLeader else 0
-		d = Vec2(leader.pos.x - self.pos.x, leader.pos.y - self.pos.y)
+		weight5 = 3 if not self.predator else 0
+		d = Vec2(predator.pos.x - self.pos.x, predator.pos.y - self.pos.y).mult(-1)
+		dist = d.abs()
+		if not self.predator:
+			predatorDists.append(dist)
+		if dist != 0:
+			weight5 *= 200/dist
 		angle5 = d.toAngle()
+
+		if self.predator:
+			weight5 = 20
+			m = min(predatorDists)
+			pos = flock.bishes[predatorDists.index(m)].pos
+			angle5 = Vec2(pos.x - self.pos.x, pos.y - self.pos.y).toAngle()
+			if m < 20:
+				flock.eliminate(predatorDists.index(m))
+				self.move(obstacles)
+				self.move(obstacles)
 
 		#Weight the desires
 		params = [(angle1, weight1), (angle2, weight2), (angle3, weight3), (angle4, weight4), (angle5, weight5)]
@@ -191,10 +214,10 @@ class Bish():
 				self.pos.y + self.sightRad*cos(final))
 
 			if checkPos.inBounds() and not obstacles.collides(checkPos):
+				self.desi = final
+
 				if attempt != 0: self._rotToDesi(5)
 				break
-
-		self.desi = final
 
 		self._rotToDesi()
 
@@ -212,40 +235,78 @@ class Bish():
 
 	def mate(self, flock):
 		if len(self.nearby) > 0:# and self.age >= adultAge:
-			if random() < 0.001:
+			if random() < 0.0003:
 				flock.add(self.pos)
+				print(len(flock.bishes))
 
+class Particle():
+
+	def __init__(self, center, vel):
+		self.center = center
+		self.pos = Vec2(center.x, center.y)
+		angle = random()*2*pi
+		self.vel = Vec2(cos(angle)*5*random(), sin(angle)*5*random()).addVec(vel.mult(2))
+		if randint(0,20) == 0:
+			self.vel = self.vel.mult(2)
+		if randint(0,1) == 0:
+			self.col = [240,20,90]
+		else:
+			self.col = [15,150,60]
+
+	def move(self, obstacles):
+		self.pos = self.pos.addVec(self.vel)
+		self.vel = self.vel.mult(0.8)
+		if obstacles.collides(self.pos):
+			self.vel = Vec2(0,0)
+
+	def draw(self, surf):
+		pygame.draw.rect(surf, self.col, self.pos.ints() + (2,2))
 
 class Flock():
 
 	bishes = []
+	particles = []
 
-	def __init__(self, n=1):
+	def __init__(self, n, obstacles):
 		for i in range(n):
-			self.bishes.append(Bish(Vec2(xSize*random(), ySize*random())))
+			pos = Vec2(xSize*random(), ySize*random())
+			while obstacles.collides(pos):
+				pos = Vec2(xSize*random(), ySize*random())
+
+			self.bishes.append(Bish(pos))
 			self.bishes[-1].dirc = random()*2*pi
 			self.bishes[-1].desi = random()*2*pi
+		self.bishes[-1].predator = True
+		self.bishes[-1].age += 100
 
 	def add(self, pos):
 		bish = Bish(Vec2(pos.x, pos.y))
 		bish.dirc = random()*2*pi
 		bish.desi = random()*2*pi
 
-		self.bishes.append(bish)
+		self.bishes = [bish] + self.bishes
 
 	def move(self, shouldSeek, mousePos, mouseHold, obstacles):
+		for particle in self.particles:
+			particle.move(obstacles)
+
+		predatorDists.clear()
 		for bish in self.bishes:
-			bish.move()
+			bish.mate(self)
+			bish.move(obstacles)
 			if shouldSeek: bish.seek(self.bishes)
-			bish.rotate(mousePos, mouseHold, self.bishes[-1], obstacles)
+			bish.rotate(mousePos, mouseHold, self.bishes[-1], obstacles, self)
 
 		return self.bishes[-1].pos
 
 	def draw(self):
 		scene = pygame.Surface((xSize, ySize), pygame.SRCALPHA, 32)
 
+		for particle in self.particles:
+			particle.draw(scene)
+
 		for bish in self.bishes:
-			col = [20,200,90] if bish != self.bishes[-1] else [240, 200, 10]
+			col = bish_col if bish != self.bishes[-1] else [240, 200, 10]
 			pygame.draw.polygon(scene, col, (
 				(bish.pos.x + 16*sin(bish.dirc)*(bish.age + 200)/adultAge,			bish.pos.y + 16*cos(bish.dirc)*(bish.age + 200)/adultAge),
 				(bish.pos.x + 5*sin(bish.dirc - pi/2)*(bish.age + 200)/adultAge,	bish.pos.y + 5*cos(bish.dirc - pi/2)*(bish.age + 200)/adultAge),
@@ -258,6 +319,13 @@ class Flock():
 
 		return scene
 		#screen.blit(scene, (0,0))
+
+	def eliminate(self, n):
+		for _ in range(200):
+			self.particles.append(Particle(self.bishes[n].pos, self.bishes[n].vel))
+			if len(self.particles) > 2000:
+				del self.particles[randint(0, len(self.particles) - 1)]
+		del self.bishes[n]
 
 class Obstacles():
 
