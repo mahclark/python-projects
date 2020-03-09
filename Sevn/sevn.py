@@ -30,11 +30,12 @@ class ScoreBoard:
 
 	lineWidth = 1
 
-	def __init__(self, surf):
+	def __init__(self, surf=pygame.Surface((0,0))):
+		pygame.init()
 		self.surf = surf
 		self.xSize, self.ySize = surf.get_size()
 
-		self.gridHeight = int(min(self.xSize*(3/5)*(7/15), self.ySize - 50))
+		self.gridHeight = max(0,int(min(self.xSize*(3/5)*(7/15), self.ySize - 50)))
 		self.gridHeight += self.lineWidth - (self.gridHeight % 7)
 		self.gridPos = Vec2((self.xSize - self.gridHeight*15/7)/2, 50)
 
@@ -89,7 +90,14 @@ class ScoreBoard:
 		self.surf.blit(score1Label, (10, 50))
 		self.surf.blit(score2Label, (self.xSize - 35, 50))
 
-	def select(self, color):
+	def nextPlayer(self):
+		if self.state == 0 and self.currentColor != None:
+			self.player1 = not self.player1
+			self.currentColor = None
+			return True
+		return False
+
+	def selectColor(self, color):
 		if self.state == 0 and self.currentColor in [None, color]:
 			self.currentColor = color
 			self.taken += 1
@@ -117,16 +125,20 @@ class ScoreBoard:
 
 		return False
 
-	def nextPlayer(self):
-		if self.state == 0 and self.currentColor != None:
-			self.player1 = not self.player1
-			self.currentColor = None
+	def peek(self, color, number):
+		if self.state == 0:
+			peekScores = [x for x in self.scores]
+			peekScores[color] += (1 - 2*self.player1)*number
 
-class Board:
+			return peekScores
+		return None
+
+class Game:
 
 	gridWidth = 5
 
-	def __init__(self, surf, scoreBoard):
+	def __init__(self, scoreBoard, surf=pygame.Surface((0,0))):
+		pygame.init()
 		self.surf = surf
 		self.grid = pygame.Surface(surf.get_size(), pygame.SRCALPHA, 32)
 		self.xSize, self.ySize = surf.get_size()
@@ -169,7 +181,7 @@ class Board:
 
 		for y in range(0, 7):
 			for x in range(0, 7):
-				if not (x, y) in self.taken:
+				if not (x, y) in self.taken and self.board[y][x] != -1:
 					if (x, y) in self.takable:
 						pygame.draw.rect(self.grid, (255,255,255), (
 							x*self.xCell + ceil(self.gridWidth/2),
@@ -205,48 +217,88 @@ class Board:
 			self.surf.blit(self.grid, (0,0))
 
 	def nextPlayer(self):
-		self.takable.update(self.newTakable)
-		self.newTakable.clear()
-		scoreBoard.nextPlayer()
-
+		if self.scoreBoard.nextPlayer():
+			self.takable.update(self.newTakable)
+			self.newTakable.clear()
+			return True
+		return False
 
 	def click(self, pos):
 		cx = int(pos.x/self.xCell)
 		cy = int(pos.y/self.yCell)
+		self.makeMove(cx, cy)
 
-		if self.state == 0 and (cx, cy) in self.takable and self.scoreBoard.select(self.board[cy][cx]):
-			self.state = scoreBoard.state
+	def makeMoves(self, moveSet):
+		for x, y in moveSet:
+			self.makeMove(x, y)
+
+	def makeMove(self, cx, cy):
+
+		# for x, y in self.takable:
+		# 	if self.board[y][x] == -1:
+		# 		raise Exception("Here is the problem:", x, y)
+
+		if self.state == 0 and (cx, cy) in self.takable and self.scoreBoard.selectColor(self.board[cy][cx]):
+			self.state = self.scoreBoard.state
 			self.taken.add((cx, cy))
 			self.takable.remove((cx, cy))
+			self.board[cy][cx] = -1
 
 			for nx, ny in [(cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)]:
-				if (self._checkTakable(nx, ny)):
+				if Game.checkTakable(self.board, nx, ny):
 					self.newTakable.add((nx, ny))
 
-	def _inBounds(self, x, y):
+		# for x, y in self.takable:
+		# 	if self.board[y][x] == -1:
+		# 		raise Exception("Here is the problem:", x, y)
+
+	def peek(self, choices):
+
+		# for x, y in self.takable:
+		# 	if self.board[y][x] == -1:
+		# 		raise Exception("Here is the problem:", x, y, self.board)
+
+		peekBoard = [[x for x in row] for row in self.board]
+		chosenColor = None
+		number = len(choices)
+
+		for x, y in choices:
+			if not chosenColor in [None, self.board[y][x]]:
+				print("WRONG COLOR CHOSEN:", chosenColor, "but should be", self.board[y][x])
+				return None
+			
+			chosenColor = self.board[y][x]
+			peekBoard[y][x] = -1
+
+		if self.state != 0:
+			peekBoard = None
+
+		return (peekBoard, self.scoreBoard.peek(chosenColor, number))
+
+	def inBounds(x, y):
 		return not (x < 0 or x > 6 or y < 0 or y > 6)
 
-	def _isEmpty(self, x, y):
-		return (not self._inBounds(x, y)) or (x, y) in self.taken
+	def isEmpty(board, x, y):
+		return (not Game.inBounds(x, y)) or board[y][x] == -1
 
-	def _checkTakable(self, x, y):
-		if not self._inBounds(x, y):
+	def checkTakable(board, x, y):
+		if not Game.inBounds(x, y) or board[y][x] == -1:
 			return False
 
 		count = 0
 		check = 0
-		if self._isEmpty(x - 1, y):
+		if Game.isEmpty(board, x - 1, y):
 			count += 1
 			check += 1
 
-		if self._isEmpty(x, y + 1):
+		if Game.isEmpty(board, x, y + 1):
 			count += 1
 
-		if self._isEmpty(x + 1, y):
+		if Game.isEmpty(board, x + 1, y):
 			count += 1
 			check += 1
 
-		if self._isEmpty(x, y - 1):
+		if Game.isEmpty(board, x, y - 1):
 			count += 1
 
 		if count > 1 and not (count == 2 and check % 2 == 0):
@@ -254,67 +306,35 @@ class Board:
 
 		return False
 
-if __name__ == "__main__":
-	pygame.init()
-	xSize, ySize = 700, 700
-	screen = pygame.display.set_mode((xSize, ySize))
-	pygame.display.set_caption("Sevn")
+	def nextPlayerCanWinInOne(board, scores):
+		takable = [0, 0, 0, 0, 0, 0, 0]
+		for y in range(7):
+			for x in range(7):
+				if Game.checkTakable(board, x, y):
+					takable[board[y][x]] += 1
 
-	background = pygame.Surface(screen.get_size())
-	makeBackground(background,
-		(178, 165, 201),#(222, 213, 155),#(178, 209, 214),
-		(219, 82, 61)#(159, 136, 179)
-	)
+		for i in range(len(takable)):
+			if takable[i] - scores[i] == 7:
+				return True
+		return False
 
-	scoreSurf = pygame.Surface((400, 200), pygame.SRCALPHA, 32)
-	scoreBoard = ScoreBoard(scoreSurf)
-	scorePos = Vec2(xSize/2 - scoreSurf.get_size()[0]/2, 40)
+	def winnable(board, scores, for_next_player=True):
+		remaining = [0, 0, 0, 0, 0, 0, 0]
+		for y in range(7):
+			for x in range(7):
+				if board[y][x] != -1:
+					remaining[board[y][x]] += 1
 
-	boardSurf = pygame.Surface((400, 400), pygame.SRCALPHA, 32)
-	board = Board(boardSurf, scoreBoard)
-	boardPos = Vec2(xSize/2 - boardSurf.get_size()[0]/2, 250)
+		points = sum([scores[i] < 0 for i in range(7)])
 
-	clock = pygame.time.Clock()
-	frameCount = 0
-	done = False
-	mouseHold = False
-	while not done:
-		frameCount += 1
-		keys = pygame.key.get_pressed()
-		mx, my = pygame.mouse.get_pos()
-		for event in pygame.event.get():
-			if event.type == pygame.QUIT:
-				done = True
+		if points > 3:
+			return True
+		pointsToGet = 4 - points
 
-			if event.type == pygame.MOUSEBUTTONDOWN:
-				mouseHold = True
-
-			if event.type == pygame.MOUSEBUTTONUP:
-				mouseHold = False
-
-				mask = pygame.mask.from_surface(boardSurf)
-				relClick = Vec2(mx, my).addVec(boardPos.mult(-1))
-				try: 
-					if mask.get_at(relClick.toInts()):
-						board.click(relClick)
-				except IndexError:
-					pass
-
-			if event.type == pygame.KEYUP:
-				if event.key == pygame.K_SPACE:
-					board.nextPlayer()
-
-		if frameCount > 60*60*10:
-			done = True
-
-		board.draw()
-		scoreBoard.draw()
-
-		screen.blit(background, (0, 0))
-		screen.blit(scoreSurf, scorePos.toInts())
-		screen.blit(boardSurf, boardPos.toInts())
-
-		pygame.display.flip()
-		clock.tick(60)
-
-	pygame.quit()
+		# next move player wants negative scores
+		for i in range(7):
+			if remaining[i] - scores[i] == 7:
+				return True
+			if remaining[i] > scores[i]:
+				return True
+		return False
