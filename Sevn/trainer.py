@@ -9,10 +9,10 @@ class Trainer:
 	def __init__(self, checkpoint_path=None):
 		self.etaGo = EtaGo(checkpoint_path)
 
-		self.train_x = np.array([]).reshape(0,18,7,7)
-		self.train_y = np.array([]).reshape(0,18,7,7)
-		self.test_x = np.array([]).reshape(0,18,7,7)
-		self.test_y = np.array([]).reshape(0,18,7,7)
+		self.train_x = np.array([]).reshape(0,403)#18,7,7)
+		self.train_y = np.array([]).reshape(0,1)#,1)
+		self.test_x = np.array([]).reshape(0,403)#,18,7,7)
+		self.test_y = np.array([]).reshape(0,1)#,1)
 
 	def makeTrainingData(self, numGames=20, verbose=False):
 		self.train_x, self.train_y = self._makeData(numGames, verbose)
@@ -21,7 +21,7 @@ class Trainer:
 		self.test_x, self.test_y = self._makeData(numGames, verbose)
 
 	def _makeData(self, numGames, verbose):
-		x, y = np.array([]).reshape(0,18,7,7), np.array([]).reshape(0, 1)
+		x, y = np.array([]).reshape(0,403), np.array([]).reshape(0, 1)
 		for i in range(numGames):
 			scoreBoard = ScoreBoard()
 			game = Game(scoreBoard)
@@ -57,10 +57,10 @@ class Trainer:
 		else:
 			callbacks = [callback]
 
-		self.etaGo.model.fit(self.train_x.reshape(self.train_x.shape[0],7,7,18), self.train_y, epochs=epochs, callbacks=callbacks)
+		self.etaGo.model.fit(self.train_x, self.train_y, epochs=epochs, callbacks=callbacks)
 
 	def evaluate(self):
-		self.etaGo.model.evaluate(self.test_x.reshape(self.test_x.shape[0],7,7,18),  self.test_y, verbose=2)
+		self.etaGo.model.evaluate(self.test_x,  self.test_y, verbose=2)
 
 		# predictions = self.model(self.test_x[:10]).numpy()
 		# print(predictions.flatten())
@@ -72,24 +72,12 @@ if __name__ == "__main__":
 	i = 0
 	while True:
 		print("Making training set", i)
-		trainer.makeTrainingData(100, verbose=True)
+		trainer.makeTrainingData(10, verbose=True)
 		#trainer.saveTrainingData("data/conv18/trainging_set_" + str(i))
 		
-		cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/conv18_64_256_1/phase_" + str(i) + "/cp.ckpt",
+		cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/403_403_201_1/phase_" + str(i) + "/cp.ckpt",
 	                                                 save_weights_only=True,
 	                                                 verbose=1)
 
 		trainer.train(5, cp_callback)
 		i += 1
-
-
-	# print("Making training data...")
-	# eta.makeTrainingData(1000)
-
-	# print("Making test data...")
-	# eta.makeTestData(100)
-
-	# print("Training...")
-	# eta.train(20, cp_callback)
-
-	# eta.evaluate()

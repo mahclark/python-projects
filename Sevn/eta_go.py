@@ -16,10 +16,9 @@ class EtaGo:
 
 	def __init__(self, checkpoint_path=None):
 		self.model = tf.keras.models.Sequential([
-			tf.keras.layers.Conv2D(64, (3,3), input_shape=(7,7,18)), # 7 tile states + 7 scores + 4 flags = 18
-			tf.keras.layers.MaxPooling2D(2,2),
-			tf.keras.layers.Flatten(),
-			tf.keras.layers.Dense(256),
+			tf.keras.layers.Dense(403, input_shape=(403,)),
+			tf.keras.layers.Dense(403),
+			tf.keras.layers.Dense(201),
 			tf.keras.layers.Dense(1, activation='sigmoid')
 		])
 
@@ -37,31 +36,28 @@ class EtaGo:
 		self.bestMoveSet = None
 
 	def getWinProb(self, inputs):
-		return self.model(inputs.reshape(1,7,7,18)).numpy()
+		return self.model(inputs.reshape(1,403)).numpy()
 
 	def _formatInputs(self, board, scores):
-		inputs = np.array([]).reshape(0,7,7)
+		inputs = np.array([])
 
-		for i in range(7):
-			inputs = np.concatenate((inputs, np.array([[[int(tile == i) for tile in row] for row in board]])), axis=0)
+		for row in board:
+			for tile in row:
+				for i in range(-1, 7):
+					inputs = np.append(inputs, float(tile == i))
 
-		for i in range(7):
-			inputs = np.concatenate((inputs, np.ones((1,7,7))*scores[i]), axis=0)
+		for score in scores:
+			inputs = np.append(inputs,score/7)
 
-		winnableLeft = int(Game.winnable(board, scores, for_left_player=True))
-		winnableRight = int(Game.winnable(board, scores, for_left_player=False))
-		canWin = int(Game.canWinInOne(board, scores, for_left_player=True))
-		hasWon = int(Game.hasWon(board, scores, for_left_player=False))
-
-		inputs = np.concatenate((inputs, np.ones((1,7,7))*winnableLeft), axis=0)
-		inputs = np.concatenate((inputs, np.ones((1,7,7))*winnableRight), axis=0)
-		inputs = np.concatenate((inputs, np.ones((1,7,7))*canWin), axis=0)
-		inputs = np.concatenate((inputs, np.ones((1,7,7))*hasWon), axis=0)
+		inputs = np.append(inputs, int(Game.winnable(board, scores, for_left_player=True)))
+		inputs = np.append(inputs, int(Game.winnable(board, scores, for_left_player=False)))
+		inputs = np.append(inputs, int(Game.canWinInOne(board, scores, for_left_player=True)))
+		inputs = np.append(inputs, int(Game.hasWon(board, scores, for_left_player=False)))
 
 		return inputs
 
 	def _decodeInputFlags(self, inputs):
-		return (inputs[-4][0][0], inputs[-3][0][0], inputs[-2][0][0], inputs[-1][0][0])
+		return (inputs[-4], inputs[-3], inputs[-2], inputs[-1])
 
 	def makeMove(self, game, scoreBoard):
 		if self.bestMoveSet == None:
@@ -166,7 +162,7 @@ if __name__ == "__main__":
 	game = Game(scoreBoard, boardSurf)
 	boardPos = Vec2(xSize/2 - boardSurf.get_size()[0]/2, 250)
 
-	etaGo = EtaGo("models/conv18_64_256_1/phase_8/cp.ckpt")
+	etaGo = EtaGo("models/403_403_201_1/phase_12/cp.ckpt")
 
 	clock = pygame.time.Clock()
 	frameCount = 0
