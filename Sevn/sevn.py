@@ -30,7 +30,7 @@ class ScoreBoard:
 
 	lineWidth = 1
 
-	def __init__(self, surf=pygame.Surface((0,0))):
+	def __init__(self, surf=pygame.Surface((0,0)), player1Name="Player 1", player2Name="Player 2"):
 		pygame.init()
 		self.surf = surf
 		self.xSize, self.ySize = surf.get_size()
@@ -48,6 +48,9 @@ class ScoreBoard:
 		self.taken = 0
 		self.p1Score = 0
 		self.p2Score = 0
+
+		self.player1Name = player1Name
+		self.player2Name = player2Name
 
 		self.smallFont = pygame.font.SysFont("Bahnschrift", 20)
 		self.bigFont = pygame.font.SysFont("Bahnschrift", 50)
@@ -79,16 +82,24 @@ class ScoreBoard:
 		pygame.draw.line(self.surf, selectedCol if self.player1 else lineCol, (10, 40), (self.gridPos.x + self.gridHeight - 1, 40), 2)
 		pygame.draw.line(self.surf, lineCol if self.player1 else selectedCol, (self.gridPos.x + int(self.gridHeight*8/7), 40), (self.xSize - 10, 40), 2)
 
-		p1Label = self.smallFont.render("Player 1", 1, selectedCol if self.player1 else lineCol)
-		p2Label = self.smallFont.render("Player 2", 1, lineCol if self.player1 else selectedCol)
+		p1Label = self.smallFont.render(self.player1Name, 1, selectedCol if self.player1 else lineCol)
+		p2Label = self.smallFont.render(self.player2Name, 1, lineCol if self.player1 else selectedCol)
+
+		p2Label_rect = p2Label.get_rect()
+		p2Label_rect.top = 10
+		p2Label_rect.right = self.xSize - 10
 
 		score1Label = self.bigFont.render(str(self.p1Score), 1, white)
 		score2Label = self.bigFont.render(str(self.p2Score), 1, white)
 
+		score2Label_rect = score2Label.get_rect()
+		score2Label_rect.top = 50
+		score2Label_rect.right = self.xSize - 10
+
 		self.surf.blit(p1Label, (10, 10))
-		self.surf.blit(p2Label, (self.xSize - 83, 10))
+		self.surf.blit(p2Label, p2Label_rect)
 		self.surf.blit(score1Label, (10, 50))
-		self.surf.blit(score2Label, (self.xSize - 35, 50))
+		self.surf.blit(score2Label, score2Label_rect)
 
 	def nextPlayer(self):
 		if self.state == 0 and self.currentColor != None:
@@ -145,7 +156,6 @@ class Game:
 		self.xCell = (self.xSize - self.gridWidth)//7
 		self.yCell = (self.ySize - self.gridWidth)//7
 		self.scoreBoard = scoreBoard
-		self.taken = set()
 		self.takable = {(0, 0), (0, 6), (6, 0), (6, 6)}
 		self.newTakable = set()
 		self.state = 0
@@ -181,7 +191,7 @@ class Game:
 
 		for y in range(0, 7):
 			for x in range(0, 7):
-				if not (x, y) in self.taken and self.board[y][x] != -1:
+				if self.board[y][x] != -1:
 					if (x, y) in self.takable:
 						pygame.draw.rect(self.grid, (255,255,255), (
 							x*self.xCell + ceil(self.gridWidth/2),
@@ -211,8 +221,12 @@ class Game:
 
 		if self.state != 0:
 			self.grid.set_alpha(self.grid.get_alpha()*0.9)
-			winLabel = self.bigFont.render("Player " + str(self.state) + " wins!", 1, white)
-			self.surf.blit(winLabel, (self.xSize/2 - 195, self.ySize/2 - 40))
+			winLabel = self.bigFont.render((self.scoreBoard.player1Name if self.scoreBoard.state == 1 else self.scoreBoard.player2Name) + " wins!", 1, white)
+			
+			winLabel_rect = winLabel.get_rect()
+			winLabel_rect.center = (self.xSize/2, self.ySize/2)
+
+			self.surf.blit(winLabel, winLabel_rect)
 		else:
 			self.surf.blit(self.grid, (0,0))
 
@@ -240,7 +254,6 @@ class Game:
 
 		if self.state == 0 and (cx, cy) in self.takable and self.scoreBoard.selectColor(self.board[cy][cx]):
 			self.state = self.scoreBoard.state
-			self.taken.add((cx, cy))
 			self.takable.remove((cx, cy))
 			self.board[cy][cx] = -1
 
@@ -306,35 +319,62 @@ class Game:
 
 		return False
 
-	def nextPlayerCanWinInOne(board, scores):
+	def canWinInOne(board, scores, for_left_player=True):
 		takable = [0, 0, 0, 0, 0, 0, 0]
 		for y in range(7):
 			for x in range(7):
 				if Game.checkTakable(board, x, y):
 					takable[board[y][x]] += 1
 
-		for i in range(len(takable)):
-			if takable[i] - scores[i] == 7:
+		# for_left_player means for person on left of the scoreboard (who wins if they get -7)
+		if for_left_player:
+			scores = [-x for x in scores]
+
+		for i in range(7):
+			if scores[i] == -7:
+				return False
+
+		for i in range(7):
+			if takable[i] + scores[i] == 7:
 				return True
 		return False
 
-	def winnable(board, scores, for_next_player=True):
+	def winnable(board, scores, for_left_player=True):
 		remaining = [0, 0, 0, 0, 0, 0, 0]
 		for y in range(7):
 			for x in range(7):
 				if board[y][x] != -1:
 					remaining[board[y][x]] += 1
 
-		points = sum([scores[i] < 0 for i in range(7)])
+		# for_left_player means for person on left of the scoreboard (who wins if they get -7)
+		if for_left_player:
+			scores = [-x for x in scores]
+
+		points = sum([score > 0 for score in scores])
 
 		if points > 3:
 			return True
-		pointsToGet = 4 - points
+		maxPoints = 0
 
-		# next move player wants negative scores
 		for i in range(7):
-			if remaining[i] - scores[i] == 7:
+			if remaining[i] + scores[i] == 7:
 				return True
-			if remaining[i] > scores[i]:
+			if remaining[i] + scores[i] > 0:
+				maxPoints += 1
+
+		return maxPoints > 3
+
+	def hasWon(board, scores, for_left_player=True):
+		if for_left_player:
+			scores = [-x for x in scores]
+
+		for score in scores:
+			if score == 7:
 				return True
-		return False
+
+		for y in range(7):
+			for x in range(7):
+				if board[y][x] != -1:
+					return False
+
+		return sum([x > 0 for x in scores]) > 3

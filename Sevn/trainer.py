@@ -9,19 +9,19 @@ class Trainer:
 	def __init__(self, checkpoint_path=None):
 		self.etaGo = EtaGo(checkpoint_path)
 
-		self.train_x = np.array([])
-		self.train_y = np.array([])
-		self.test_x = np.array([])
-		self.test_y = np.array([])
+		self.train_x = np.array([]).reshape(0,18,7,7)
+		self.train_y = np.array([]).reshape(0,18,7,7)
+		self.test_x = np.array([]).reshape(0,18,7,7)
+		self.test_y = np.array([]).reshape(0,18,7,7)
 
-	def makeTrainingData(self, numGames=20):
-		self.train_x, self.train_y = self._makeData(numGames)
+	def makeTrainingData(self, numGames=20, verbose=False):
+		self.train_x, self.train_y = self._makeData(numGames, verbose)
 
-	def makeTestData(self, numGames=5):
-		self.test_x, self.test_y = self._makeData(numGames)
+	def makeTestData(self, numGames=5, verbose=False):
+		self.test_x, self.test_y = self._makeData(numGames, verbose)
 
-	def _makeData(self, numGames):
-		x, y = np.array([]).reshape(0, 399), np.array([]).reshape(0, 1)
+	def _makeData(self, numGames, verbose):
+		x, y = np.array([]).reshape(0,18,7,7), np.array([]).reshape(0, 1)
 		for i in range(numGames):
 			scoreBoard = ScoreBoard()
 			game = Game(scoreBoard)
@@ -29,13 +29,24 @@ class Trainer:
 			x = np.concatenate((x, data_x), axis=0)
 			y = np.concatenate((y, data_y), axis=0)
 
-			#print("Played " + str(i + 1) + " / " + str(numGames))
+			milestone = int(10*i/numGames)*10
+			lastMilestone = int(10*(i - 1)/numGames)*10
+			if verbose and milestone != lastMilestone:
+				print(str(milestone) + "%")
+				#print("Played " + str(i + 1) + " / " + str(numGames))
 
 		return (x, y)
 
 	def saveTrainingData(self, path):
 		np.savetxt(path + "_x.csv", self.train_x, delimiter=',')
 		np.savetxt(path + "_y.csv", self.train_y, delimiter=',')
+
+	def loadTrainingData(self, path, lower, upper):
+		for i in range(lower, upper + 1):
+			x = np.loadtxt(open(path + str(i) + "_x.csv", "rb"), delimiter=",")
+			y = np.loadtxt(open(path + str(i) + "_y.csv", "rb"), delimiter=",")
+			self.train_x = np.concatenate((self.train_x, x), axis=0)
+			self.train_y = np.concatenate((self.train_y, y.reshape(y.shape[0], 1)), axis=0)
 
 	def train(self, epochs=5, callback=None):
 		# predictions = self.model(self.test_x[:10]).numpy()
@@ -46,30 +57,29 @@ class Trainer:
 		else:
 			callbacks = [callback]
 
-		self.etaGo.model.fit(self.train_x, self.train_y, epochs=epochs, callbacks=callbacks)
+		self.etaGo.model.fit(self.train_x.reshape(self.train_x.shape[0],7,7,18), self.train_y, epochs=epochs, callbacks=callbacks)
 
 	def evaluate(self):
-		self.etaGo.model.evaluate(self.test_x,  self.test_y, verbose=2)
+		self.etaGo.model.evaluate(self.test_x.reshape(self.test_x.shape[0],7,7,18),  self.test_y, verbose=2)
 
 		# predictions = self.model(self.test_x[:10]).numpy()
 		# print(predictions.flatten())
 
 if __name__ == "__main__":
 
-	trainer = Trainer()#"models/phase_" + "17" + "/cp.ckpt")#"shower_model/cp.ckpt")
+	trainer = Trainer()#"models/403_403_201_1/phase_11/cp.ckpt")
 
 	i = 0
 	while True:
 		print("Making training set", i)
-		trainer.makeTrainingData(10)
-		trainer.saveTrainingData("data/trainging_set_" + str(i))
-		print("Made data")
+		trainer.makeTrainingData(100, verbose=True)
+		#trainer.saveTrainingData("data/conv18/trainging_set_" + str(i))
 		
-		cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/399_399_199_1/phase_" + str(i) + "/cp.ckpt",
+		cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/conv18_64_256_1/phase_" + str(i) + "/cp.ckpt",
 	                                                 save_weights_only=True,
 	                                                 verbose=1)
 
-		trainer.train(10, cp_callback)
+		trainer.train(5, cp_callback)
 		i += 1
 
 
