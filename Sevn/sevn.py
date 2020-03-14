@@ -371,6 +371,8 @@ class Game:
 		for score in scores:
 			if score == 7:
 				return True
+			if score == -7:
+				return False
 
 		for y in range(7):
 			for x in range(7):

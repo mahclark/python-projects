@@ -9,9 +9,9 @@ class Trainer:
 	def __init__(self, checkpoint_path=None):
 		self.etaGo = EtaGo(checkpoint_path)
 
-		self.train_x = np.array([]).reshape(0,403)#18,7,7)
+		self.train_x = np.array([]).reshape(0,self.etaGo.inputSize)#18,7,7)
 		self.train_y = np.array([]).reshape(0,1)#,1)
-		self.test_x = np.array([]).reshape(0,403)#,18,7,7)
+		self.test_x = np.array([]).reshape(0,self.etaGo.inputSize)#,18,7,7)
 		self.test_y = np.array([]).reshape(0,1)#,1)
 
 	def makeTrainingData(self, numGames=20, verbose=False):
@@ -21,7 +21,7 @@ class Trainer:
 		self.test_x, self.test_y = self._makeData(numGames, verbose)
 
 	def _makeData(self, numGames, verbose):
-		x, y = np.array([]).reshape(0,403), np.array([]).reshape(0, 1)
+		x, y = np.array([]).reshape(0,self.etaGo.inputSize), np.array([]).reshape(0, 1)
 		for i in range(numGames):
 			scoreBoard = ScoreBoard()
 			game = Game(scoreBoard)
@@ -67,17 +67,25 @@ class Trainer:
 
 if __name__ == "__main__":
 
-	trainer = Trainer()#"models/403_403_201_1/phase_11/cp.ckpt")
+	trainer = Trainer("models/410_403_201_1/phase_0/cp.ckpt")
+
+	trainer.loadTrainingData("data/410/trainging_set_", 0, 7)
+	cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/410_403_201_1/phase_" + "0" + "/cp.ckpt",
+	                                                 save_weights_only=True,
+	                                                 verbose=1)
+
+	trainer.train(5, cp_callback)
+	exit()
 
 	i = 0
 	while True:
 		print("Making training set", i)
 		trainer.makeTrainingData(10, verbose=True)
-		#trainer.saveTrainingData("data/conv18/trainging_set_" + str(i))
+		trainer.saveTrainingData("data/410/trainging_set_" + str(i))
 		
-		cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/403_403_201_1/phase_" + str(i) + "/cp.ckpt",
+		cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/410_403_201_1/phase_" + str(i) + "/cp.ckpt",
 	                                                 save_weights_only=True,
 	                                                 verbose=1)
 
-		trainer.train(5, cp_callback)
+		#trainer.train(5, cp_callback)
 		i += 1
