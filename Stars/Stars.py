@@ -1,10 +1,8 @@
-import csv
 import parse
 import pygame
 import time
-import os
 from dataclasses import dataclass, replace
-from math import radians, sin, cos, tan, sqrt, pi
+from math import radians, sin, cos, pi
 from typing import NamedTuple
 
 
