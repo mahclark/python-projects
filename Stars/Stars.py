@@ -114,14 +114,11 @@ if __name__ == "__main__":
 
     speed = 1
 
-    def draw(surface, color, pos, camera, rx, ry, rad=0):
+    def get_2d(pos):
         """
         Converts 3D coordinates to 2D coordinates
-        Renders as dot on the surface provided
+        Returns None if behind camera
         """
-
-        # convert world coordinates to camera coordinates
-        pos -= camera
 
         # rotate coordinates around camera
         original = replace(pos) # deep copies dataclass
@@ -144,8 +141,37 @@ if __name__ == "__main__":
         pos.x += x_size/2
         pos.y = y_size/2 - pos.y
 
+        return pos
+
+    def draw_line(surface, color, pos1, pos2, camera):
+        # convert world coordinates to camera coordinates
+        pos1 -= camera
+        pos2 -= camera
+
+        pos1 = get_2d(pos1)
+        pos2 = get_2d(pos2)
+
+        if pos1 is None or pos2 is None: 
+            return
+
+        pygame.draw.line(surface, color, pos1.xy(), pos2.xy(), 1)
+
+
+    def draw_dot(surface, color, pos, camera, rx, ry, rad=0):
+        # convert world coordinates to camera coordinates
+        pos -= camera
+
+        pos = get_2d(pos)
+
+        if pos is None:
+            return
+
         if rad == 0:
-            surface.set_at(pos.xy(), color)
+            try:
+                surface.set_at(pos.xy(), color)
+            except OverflowError:
+                return
+
         else:
 
             for r in range(rad, rad//3 - 1, -1):
@@ -164,16 +190,71 @@ if __name__ == "__main__":
     # Read and parse the star data
     stars = []
 
+    stars_by_name = {}
+
+    constellations = {
+        "Big Dipper" : [
+            "Alkaid",
+            "Mizar",
+            "Alioth",
+            "Megrez",
+            "Phad",
+            "Merak",
+            "Dubhe"
+        ],
+        "Cassiopea" : [
+            "Caph",
+            "Shedir",
+            "Gamma",
+            "Ruchbah",
+            "Segin"
+        ],
+        "Orion" : [
+            "Rigel",
+            "ori-eta",
+            "Mintaka",
+            "Bellatrix",
+            "Mintaka",
+            "Alnilam",
+            "Alnitak",
+            "Saiph",
+            "Alnitak",
+            "Betelgeuse",
+            "ori-mu",
+            # "ori-xi",
+            # "ori-chi1",
+            # "ori-chi2",
+            "ori-xi",
+            "ori-mu",
+            "Betelgeuse",
+            "Meissa",
+            "Bellatrix",
+            "ori-pi3",
+            # "ori-pi4",
+            # "ori-pi5",
+            # "ori-pi6",
+            # "ori-pi5",
+            # "ori-pi4",
+            # "ori-pi3",
+            # "ori-pi2",
+            # "ori-pi1",
+            # "ori-omi2",
+            # "ori-no-name"
+        ]
+    }
+
     with open("data/hygfull.csv") as data_csv:
         reader = csv.reader(data_csv)
         header = next(reader, None)
 
+        name_i = header.index("ProperName")
         ra_i = header.index("RA")
         dec_i = header.index("Dec")
         dist_i = header.index("Distance")
         abs_mag_i = header.index("AbsMag")
 
         for line in reader:
+            name = line[name_i]
             ra = float(line[ra_i])
             dec = float(line[dec_i])
             dist = float(line[dist_i])*3.262
@@ -181,27 +262,15 @@ if __name__ == "__main__":
 
             star = Star(ra, dec, dist, abs_mag)
 
-            if star.get_app_mag(earth) < 7 or abs_mag < -7:
+            if star.get_app_mag(earth) < 7.3 or abs_mag < -7:
                 stars.append(star)
+
+                if name != "":
+                    stars_by_name[name] = star
 
     stars = sorted(stars, key=lambda s: -s.get_app_mag(earth))
 
     print(f"loaded {len(stars)} stars")
-
-    # with open("Stars.txt", "rb") as stars_txt:
-
-    #     for line in stars_txt.read().decode(encoding='UTF-8').split("\n"):
-    #         _, _, ra_splt, dec_splt, dist_splt = line.split(",")
-            
-    #         h, m, s = parse.parse("{:d}h {:d}m {:f}s", ra_splt)
-    #         ra = h + m/60 + s/3600
-
-    #         sign, h, m, s = parse.parse("{}{:d}° {:d}′ {:f}″", dec_splt)
-    #         dec = float(sign + "1")*(h + m/60 + s/3600)
-
-    #         dist = float(dist_splt)
-
-    #         stars.append(Star(ra, dec, dist))
 
     #----------------------Main Loop----------------------#
     clock = pygame.time.Clock()
@@ -217,7 +286,6 @@ if __name__ == "__main__":
                     speed *= 1.1
                 elif event.button == 5:
                     speed /= 1.1
-                # print(f"{speed:.2f}")
 
         if keys[pygame.K_ESCAPE]:
             pygame.mouse.set_visible(True)
@@ -250,15 +318,16 @@ if __name__ == "__main__":
             camera.z -= cos(pi/2 - rx)*speed
 
         if keys[pygame.K_SPACE]:
-            camera.y += 1*speed
+            camera.y += speed
 
         if keys[pygame.K_LCTRL]:
-            camera.y -= 1*speed
+            camera.y -= speed
 
         if keys[pygame.K_h]:
             camera.x = 0
             camera.z = 0
             camera.y = 0
+            speed = 1
 
         if keys[pygame.K_q]:
             done = True
@@ -267,11 +336,27 @@ if __name__ == "__main__":
         surf.fill([0,0,0])
 
         for star in stars:
-            draw(surf, star.get_color(camera), star, camera, rx, ry, star.get_draw_rad(camera))
+            draw_dot(surf, star.get_color(camera), star, camera, rx, ry, star.get_draw_rad(camera))
 
-        draw(surf, [0,255,0], earth, camera, rx, ry, 2)
+
+        for star_list in constellations.values():
+
+            for name1, name2 in zip(star_list, star_list[1:]):
+                star1 = stars_by_name[name1]
+                star2 = stars_by_name[name2]
+
+                if None not in [star1, star2]:
+
+                    draw_line(surf, (Vec3(255,255,255)*.5).xyz(), star1, star2, camera)
+
+
+        draw_dot(surf, [0,255,0], earth, camera, rx, ry, 2)
 
         screen.blit(surf, (0,0))
+
+        fps = str(int(clock.get_fps()))
+        fps_lbl = pygame.font.SysFont("agency fb", 18).render(fps, 1, (255,255,255))
+        screen.blit(fps_lbl, (2, 2))
 
         pygame.display.flip()
         clock.tick(60)
