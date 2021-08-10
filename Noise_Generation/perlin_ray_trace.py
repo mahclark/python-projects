@@ -231,7 +231,7 @@ class Renderer:
 				angleToSun = acos(ray.multVec(Vec3(1,100,1)).normalise().dot(self.sunVec))
 				if ray.y < 0:
 					newOrigin = current.addVec(ray.mult((self.waterLevel - current.y)/ray.y))
-					return self.traceWater(reflectLimit, ray, newOrigin, height, rayWaterAngle)
+					return self.traceWater(reflectLimit, ray, newOrigin, rayWaterAngle)
 
 				if angleToSun < pi/64:
 					return self.sunCol
@@ -250,9 +250,9 @@ class Renderer:
 				height2 = self.heights[ceil(current.z)][int(current.x)]
 				height = height2*(current.z - int(current.z)) + height1*(ceil(current.z) - current.z)
 			else:
-				if current.z % 1 != 0:
-					print(current.raw(), ray.raw())
-				assert current.z % 1 == 0
+				# if current.z % 1 != 0:
+				# 	print(current.raw(), ray.raw())
+				#assert current.z % 1 == 0
 				height1 = self.heights[int(current.z)][int(current.x)]
 				height2 = self.heights[int(current.z)][ceil(current.x)]
 				height = height2*(current.x - int(current.x)) + height1*(ceil(current.x) - current.x)
@@ -260,7 +260,7 @@ class Renderer:
 			if current.y <= max(height, self.waterLevel):
 				normal = self.normals[int(current.z)][int(current.x)]
 				if height <= self.waterLevel:
-					return self.traceWater(reflectLimit, ray, current, height, rayWaterAngle)
+					return self.traceWater(reflectLimit, ray, current, rayWaterAngle)
 
 				elif height <= self.peakLevel:
 					if self.sunVec.dot(normal) >= 0:
@@ -273,7 +273,7 @@ class Renderer:
 					else:
 						return self.peakCol.mult(0.5)
 
-	def traceWater(self, reflectLimit, ray, current, height, rayWaterAngle):
+	def traceWater(self, reflectLimit, ray, current, rayWaterAngle):
 		if reflectLimit == 0:
 			return self.waterCol
 
@@ -312,7 +312,36 @@ class RenderThread(threading.Thread):
 		self.renderer = renderer
 
 	def run(self):
-		renderer.draw(self.surf)
+		self.renderer.draw(self.surf)
+
+class VideoRenderer(threading.Thread):
+
+	totalFrames = 100
+
+	def __init__(self, threadID, surf, renderer, startCam, endCam, startSun, endSun):
+		threading.Thread.__init__(self)
+		self.threadID = threadID
+		self.surf = surf
+		self.renderer = renderer
+		self.startCam = startCam
+		self.endCam = endCam
+		self.startSun = startSun
+		self.endSun = endSun
+		print(self.startSun.raw())
+		print(self.endSun.raw())
+
+	def run(self):
+		for j in range(self.totalFrames//2):
+			for i in [j, 100 - j - 1]:
+				print("frame", i)
+				self.renderer.camera = Camera(Vec3.lerp(self.startCam.pos, self.endCam.pos, i/self.totalFrames), Vec3.lerp(self.startCam.rot, self.endCam.rot, i/self.totalFrames))
+				self.renderer.camera.pos.y = max(self.renderer.camera.pos.y, 0.02 + self.renderer.heights[int(self.renderer.camera.pos.z)][int(self.renderer.camera.pos.x)])
+				self.renderer.sunVec = Vec3.lerp(self.startSun, self.endSun, i/self.totalFrames).normalise()
+				print(self.renderer.sunVec.raw())
+
+				self.renderer.draw(self.surf)
+				pygame.image.save(self.surf,"take1/frame{}.jpeg".format(i))
+
 
 if __name__ == "__main__":
 	xSize, ySize = 1400, 600
@@ -341,6 +370,8 @@ if __name__ == "__main__":
 
 	viewVec = None
 
+	startCam = None
+
 	clock = pygame.time.Clock()
 	frameCount = 0
 	mouseHold = False
@@ -368,6 +399,13 @@ if __name__ == "__main__":
 						renderer.camera = Camera.fromViewVec(Vec3(x, max(height, renderer.waterLevel) + 0.02, y), viewVec)
 						renderThread = RenderThread(2, view, renderer)
 						renderThread.start()
+						
+						# if startCam == None:
+						# 	startCam = Camera.fromViewVec(Vec3(x, max(height, renderer.waterLevel) + 0.02, y), viewVec)
+						# else:
+						# 	endCam = Camera.fromViewVec(Vec3(x, max(height, renderer.waterLevel) + 0.02, y), viewVec)
+						# 	videoRenderer = VideoRenderer(2, view, renderer, startCam, endCam, Vec3(1,0.5,1).normalise(), Vec3(1,0,1).normalise())
+						# 	videoRenderer.start()
 
 		if renderer.generated and selector.get_rect().collidepoint(mx, my) and mouseHold:
 			vx, vy, _ = renderer.getInfo(mx/500, my/500)
