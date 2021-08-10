@@ -61,7 +61,7 @@ class Voronoi():
 		self.points = [Vec2(x, y) for x, y in points]
 		self.surf = surf
 		self.xSize, self.ySize = surf.get_size()
-		self.ants = [0 for _ in range(self.ySize)]
+		self.ants = [Vec2(0,0) for _ in range(self.ySize)]
 
 	def _setMinDist(self, pos):
 		xs = []
@@ -102,6 +102,7 @@ class Voronoi():
 
 		for fixed in self.fixed:
 			#fixed.draw(self.surf)
+			#print(fixed)
 			self.surf.set_at(fixed.toIntPair(), [0,0,0])
 
 		for i in range(len(self.ants) - 1):
@@ -109,13 +110,27 @@ class Voronoi():
 
 		pygame.draw.line(self.surf, [0,0,0], (self.lineOffset, 0), (self.lineOffset, self.ySize))
 
+	def flip(x):
+		return [(v, u) for (u, v) in x]
+	def flipVec(x):
+		return [Vec2(v.y, v.x) for v in x]
+
 if __name__ == "__main__":
-	xSize, ySize = 600, 450
+	xSize, ySize = 500, 500
 	screen = pygame.display.set_mode((xSize, ySize))
 	pygame.display.set_caption("Voronoi")
 
 	#voronoi = Voronoi([(20, 100), (20, 300)], screen)
-	voronoi = Voronoi([(randint(0, xSize - 1), randint(0, ySize - 1)) for _ in range(10)], screen)
+	#points = [(300,300),(300,100),(500,200),(500,400),(100,400),(100,200)]
+	points = [(randint(0, xSize - 1), randint(0, ySize - 1)) for _ in range(1000)]
+	voronoi = Voronoi(Voronoi.flip(points), screen)
+
+	# while not voronoi.done:
+	# 	voronoi.advance()
+	# fixed = voronoi.fixed
+	# voronoi = Voronoi(points, screen)
+	# voronoi.fixed = Voronoi.flipVec(fixed)
+
 
 	clock = pygame.time.Clock()
 	frameCount = 0
