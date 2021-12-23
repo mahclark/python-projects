@@ -115,10 +115,14 @@ class Link:
         if isinstance(self.p1, DynamicPoint):
             diff = (self.p1 - self.p2).norm() * (dist - self.length)
             self.p1.vel -= diff.norm() * diff.norm().dot(self.p1.vel).abs()
+            # if isinstance(self.p2, DynamicPoint):
+            #     self.p1.vel += diff.norm() * diff.norm().dot(self.p2.vel).abs()
 
         if isinstance(self.p2, DynamicPoint):
             diff = (self.p2 - self.p1).norm() * (dist - self.length)
             self.p2.vel -= diff.norm() * diff.norm().dot(self.p2.vel).abs()
+            # if isinstance(self.p1, DynamicPoint):
+            #     self.p2.vel += diff.norm() * diff.norm().dot(self.p1.vel).abs()
 
 
     def collide(self, p):
@@ -193,15 +197,10 @@ while not done:
     for link in links:
         link.reset_vels()
 
-    cut = None
-    for i, link in enumerate(links):
-        if mouse_hold:
+    if mouse_hold:
+        for i, link in enumerate(links):
             if link.collide(Vec2(*pygame.mouse.get_pos())):
-                cut = i
-                break
-
-    if cut:
-        del links[i]
+                del links[i]
 
     for link in links:
         pygame.draw.line(screen, link.color, link.p1.xy(), link.p2.xy(), link.thickness)

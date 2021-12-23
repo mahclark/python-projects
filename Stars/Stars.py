@@ -55,11 +55,14 @@ class Vec3:
 
 class Star(Vec3):
 
-    def __init__(self, ra, dec, dist, abs_mag):
+    def __init__(self, star_id, name, ra, dec, dist, abs_mag):
         """
         Takes the right ascension, declination and distance from Earth
         and calculates the 3D coordinates of the star
         """
+        self.star_id = star_id
+        self.name = name
+
         hth = -ra*pi/12
         vth = dec*pi/180
 
@@ -151,7 +154,7 @@ if __name__ == "__main__":
         pos1 = get_2d(pos1)
         pos2 = get_2d(pos2)
 
-        if pos1 is None or pos2 is None: 
+        if pos1 is None or pos2 is None:
             return
 
         pygame.draw.line(surface, color, pos1.xy(), pos2.xy(), 1)
@@ -240,8 +243,27 @@ if __name__ == "__main__":
             # "ori-pi1",
             # "ori-omi2",
             # "ori-no-name"
-        ]
+        ],
+        "Aquarius" : [
+            "aq-epsilon",
+            "aq-mu",
+            "aq-beta",
+            "aq-alpha",
+            "aq-theta",
+            "aq-iota",
+            "aq-theta",
+            "aq-alpha",
+            "aq-gamma",
+            "aq-zeta",
+            "aq-eta",
+            "aq-phi",
+            "aq-lambda",
+            "aq-tau",
+            "aq-delta",
+        ],
     }
+
+    constellation_star_names = set(name for const in constellations.values() for name in const)
 
     with open("data/hygfull.csv") as data_csv:
         reader = csv.reader(data_csv)
@@ -252,6 +274,7 @@ if __name__ == "__main__":
         dec_i = header.index("Dec")
         dist_i = header.index("Distance")
         abs_mag_i = header.index("AbsMag")
+        star_id_i = header.index("StarID")
 
         for line in reader:
             name = line[name_i]
@@ -259,18 +282,20 @@ if __name__ == "__main__":
             dec = float(line[dec_i])
             dist = float(line[dist_i])*3.262
             abs_mag = float(line[abs_mag_i])
+            star_id = int(line[star_id_i])
 
-            star = Star(ra, dec, dist, abs_mag)
+            star = Star(star_id, name, ra, dec, dist, abs_mag)
 
-            if star.get_app_mag(earth) < 7.3 or abs_mag < -7:
+            if star.get_app_mag(earth) < 7.3 or abs_mag < -7 or name in constellation_star_names:
                 stars.append(star)
 
                 if name != "":
                     stars_by_name[name] = star
 
+
     stars = sorted(stars, key=lambda s: -s.get_app_mag(earth))
 
-    print(f"loaded {len(stars)} stars")
+    # print(f"loaded {len(stars)} stars")
 
     #----------------------Main Loop----------------------#
     clock = pygame.time.Clock()
@@ -338,6 +363,9 @@ if __name__ == "__main__":
         for star in stars:
             draw_dot(surf, star.get_color(camera), star, camera, rx, ry, star.get_draw_rad(camera))
 
+            pos = get_2d(star - camera)
+            if pos and keys[pygame.K_t] and sqrt((pos.x - x_size/2)**2 + (pos.y - y_size/2)**2) < 20:
+                print(star.star_id)
 
         for star_list in constellations.values():
 
@@ -351,6 +379,8 @@ if __name__ == "__main__":
 
 
         draw_dot(surf, [0,255,0], earth, camera, rx, ry, 2)
+
+        # pygame.draw.line(surf, [255,255,255], (x_size//2, y_size//2),(x_size//2,y_size))
 
         screen.blit(surf, (0,0))
 

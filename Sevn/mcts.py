@@ -49,9 +49,10 @@ class TreeNode:
 				self.bestChild = child
 
 	def clearFlag(self):
-		self.visited = False
-		for child, _ in self.children:
-			child.clearFlag()
+		if self.visited:
+			self.visited = False
+			for child, _ in self.children:
+				child.clearFlag()
 
 	def evaluateGame(self, epsilon):
 		retVisited = self.visited
@@ -145,6 +146,7 @@ class MCTreeSearch:
 	def getWinProb(self, sampleSize=100, epsilon=0.5):
 		uniqueSampleSize = 0
 		winSum = 0
+		self.root.clearFlag()
 
 		for i in range(sampleSize):
 			winner, visited = self.root.evaluateGame(epsilon)

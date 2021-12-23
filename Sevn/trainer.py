@@ -8,11 +8,9 @@ class Trainer:
 
 	def __init__(self, checkpoint_path=None):
 		self.etaGo = EtaGo(checkpoint_path)
-
-		self.train_x = np.array([]).reshape(0,self.etaGo.inputSize)#18,7,7)
-		self.train_y = np.array([]).reshape(0,1)#,1)
-		self.test_x = np.array([]).reshape(0,self.etaGo.inputSize)#,18,7,7)
-		self.test_y = np.array([]).reshape(0,1)#,1)
+		self.clearTrainingData()
+		self.clearTestData()
+		
 
 	def makeTrainingData(self, numGames=20, verbose=False):
 		self.train_x, self.train_y = self._makeData(numGames, verbose)
@@ -48,6 +46,14 @@ class Trainer:
 			self.train_x = np.concatenate((self.train_x, x), axis=0)
 			self.train_y = np.concatenate((self.train_y, y.reshape(y.shape[0], 1)), axis=0)
 
+	def clearTrainingData(self):
+		self.train_x = np.array([]).reshape(0,self.etaGo.inputSize)#18,7,7)
+		self.train_y = np.array([]).reshape(0,1)#,1)
+
+	def clearTestData(self):
+		self.test_x = np.array([]).reshape(0,self.etaGo.inputSize)#,18,7,7)
+		self.test_y = np.array([]).reshape(0,1)#,1)
+
 	def train(self, epochs=5, callback=None):
 		# predictions = self.model(self.test_x[:10]).numpy()
 		# print(predictions.flatten())
@@ -69,7 +75,7 @@ if __name__ == "__main__":
 
 	trainer = Trainer("models/410_403_201_1/phase_0/cp.ckpt")
 
-	trainer.loadTrainingData("data/410/trainging_set_", 0, 7)
+	trainer.loadTrainingData("data/410/trainging_set_", 17, 55)
 	cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/410_403_201_1/phase_" + "0" + "/cp.ckpt",
 	                                                 save_weights_only=True,
 	                                                 verbose=1)
@@ -77,15 +83,20 @@ if __name__ == "__main__":
 	trainer.train(5, cp_callback)
 	exit()
 
-	i = 0
+	#new data from set 17
+	i = 42
 	while True:
 		print("Making training set", i)
 		trainer.makeTrainingData(10, verbose=True)
 		trainer.saveTrainingData("data/410/trainging_set_" + str(i))
-		
-		cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/410_403_201_1/phase_" + str(i) + "/cp.ckpt",
-	                                                 save_weights_only=True,
-	                                                 verbose=1)
 
-		#trainer.train(5, cp_callback)
+		if (i-7)%10 == 0:
+		
+			cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath="models/410_403_201_1/phase_" + str(i) + "/cp.ckpt",
+		                                                 save_weights_only=True,
+		                                                 verbose=1)
+
+			trainer.clearTrainingData()
+			trainer.loadTrainingData("data/410/trainging_set_", i-9, i)
+			trainer.train(5, cp_callback)
 		i += 1
